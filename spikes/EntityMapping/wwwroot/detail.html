@@ -1,0 +1,132 @@
+<!-- Copyright (c) Microsoft Corporation. -->
+<!-- Licensed under the MIT license. -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Embedded Teams Sample</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <style>
+      .ui-chat__message__content >p {
+        margin-bottom: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">VendorFlash POs</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Profile</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Settings
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="#">Action</a></li>
+                                <li><a class="dropdown-item" href="#">Another action</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">Something else here</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <form class="d-flex">
+                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                        <button class="btn btn-outline-success" type="submit">Search</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+        <div class="row" style="padding-top: 10px">
+            <div class="col-sm-6">
+                <h6>Purchase Order Details</h6>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-sm-6">Purchase Order Number:</div>
+                        <div class="col-sm-6" id="pon"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">Vendor:</div>
+                        <div class="col-sm-6" id="ven"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">Status:</div>
+                        <div class="col-sm-6" id="sta"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">Amount:</div>
+                        <div class="col-sm-6" id="amt"></div>
+                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <th>Line Item</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                        </thead>
+                        <tbody id="details">
+
+                        </tbody>
+                    </table>
+                    <div class="d-grid gap-2">
+                        <buttom class="btn btn-secondary">Approve</buttom>
+                        <buttom class="btn btn-secondary">Reject</buttom>
+                        <buttom class="btn btn-secondary">Delegate</buttom>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <h6>Teams Chat</h6>
+                <div id="embed" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+    <script>
+        var url = window.location.href;
+        url = url.substring(url.indexOf('?'));
+        var poNumber = url.split('=')[1];
+        var element = document.getElementById("embed");
+        element.setAttribute("teams-embed-entityid", poNumber); 
+        element.setAttribute("teams-embed-chat-title", `Purchase Order ${poNumber}`);
+        $("#header").text(`Purchase Order ${poNumber}`);
+
+        $(document).ready(async () => {
+            var resp = await fetch("/data/sampledata.json");
+            if (resp.ok) {
+                var json = await resp.json();
+                for (var i = 0; i < json.data.length; i++) {
+                    if (json.data[i].poNumber == poNumber) {
+                        $("#pon").text(json.data[i].poNumber);
+                        $("#ven").text(json.data[i].vendor);
+                        $("#sta").text(json.data[i].status);
+                        $("#amt").text(json.data[i].amount);
+                        json.data[i].lineItems.forEach(e => {
+                            $("#details").append(`<tr><td>${e.item}</td><td>${e.units}</td><td style="text-align: right;">${e.total}</td></tr>`);
+                        });
+                        break;
+                    }
+                }
+            }
+        });
+    </script>
+    <script src="/lib/react/react.production.min.js"></script>
+    <script src="/lib/react-dom/react-dom.production.min.js"></script>
+    <script src="/lib/react-router-dom/react-router-dom.min.js"></script>
+    <script src="/dist/teamsembed.js" 
+        teams-embed-client-id="7f763835-498a-43a0-a421-44b3cdf631ad"
+        teams-embed-acs-endpoint="https://rzacs.communication.azure.com" 
+        teams-embed-acs-account-name="VendorFlash"></script>
+  </body>
+</html>

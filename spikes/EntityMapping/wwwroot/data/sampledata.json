@@ -1,0 +1,79 @@
+{
+    "data": [
+        {
+            "poNumber": "0000342",
+            "vendor": "Contoso Inc",
+            "status": "rejected",
+            "amount": "$340,122.15",
+            "lineItems": [
+                {"item": "Conference display", "units": "1", "total": "$300,000.00"},
+                {"item": "Labor", "units": "400 hrs", "total": "40,122.15"}
+            ]
+        },
+        {
+            "poNumber": "0000343",
+            "vendor": "Litware",
+            "status": "approved",
+            "amount": "$27,216.40",
+            "lineItems": [
+                {"item": "FY21 magazine pubs", "units": "1", "total": "$27,216.40"}
+            ]
+        },
+        {
+            "poNumber": "0000344",
+            "vendor": "Fabrikam",
+            "status": "pending",
+            "amount": "$114,005.00",
+            "lineItems": [
+                {"item": "Launch flyers", "units": "200k", "total": "$100,000.00"},
+                {"item": "Shipping", "units": "40", "total": "$14,005.00"}
+            ]
+        },
+        {
+            "poNumber": "0000345",
+            "vendor": "Prosware",
+            "status": "pending",
+            "amount": "$100,000.00",
+            "lineItems": [
+                {"item": "Website redesign", "units": "fixed fee", "total": "$100,000.00"}
+            ]
+        },
+        {
+            "poNumber": "0000346",
+            "vendor": "Contoso Inc",
+            "status": "pending",
+            "amount": "$59,500.00",
+            "lineItems": [
+                {"item": "Lead generation", "units": "1", "total": "$59,500.00"}
+            ]
+        },
+        {
+            "poNumber": "0000347",
+            "vendor": "Northwinds",
+            "status": "pending",
+            "amount": "$225,499.99",
+            "lineItems": [
+                {"item": "Freight fees", "units": "1", "total": "$200,000.00"},
+                {"item": "Customs broker fees", "units": "1", "total": "$25,499.99"}
+            ]
+        },
+        {
+            "poNumber": "0000348",
+            "vendor": "Contoso Inc",
+            "status": "pending",
+            "amount": "$8,222.09",
+            "lineItems": [
+                {"item": "VendorFlash licenses", "units": "8", "total": "$8,222.09"}
+            ]
+        },
+        {
+            "poNumber": "0000349",
+            "vendor": "Litware",
+            "status": "pending",
+            "amount": "$156,000.00",
+            "lineItems": [
+                {"item": "Flash campaign", "units": "1", "total": "$156,000.00"}
+            ]
+        }
+    ]
+}
