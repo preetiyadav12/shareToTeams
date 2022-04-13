@@ -104,7 +104,7 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
             const createChatThreadRequest:CreateChatThreadRequest = { topic: this.props.chatTitle };
             const createChatThreadOptions:CreateChatThreadOptions = {
                 participants: [
-                    { id: { communicationUserId: response.mapping.acsUserId}, displayName: this.props.acsAccountName },
+                    //{ id: { communicationUserId: response.mapping.acsUserId}, displayName: this.props.acsAccountName },
                     { id: { microsoftTeamsUserId: "7377d1e6-2e66-456d-a91a-0c1749331cef" }, displayName: "Richard diZerega" },
                     { id: { microsoftTeamsUserId: "bd65ed4e-0c9c-4951-b04e-1cb9a4591730" }, displayName: "Brennen Cage" },
                     { id: { microsoftTeamsUserId: "bf3a74cc-852e-4fcf-9256-298f6319d9e1" }, displayName: "Lily Shen" },
