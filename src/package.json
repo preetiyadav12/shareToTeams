@@ -1,0 +1,25 @@
+{
+  "name": "teamsembeddedchat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "webpack -w --config=webpack.js --env=dev",
+    "build": "webpack --config=webpack.js --env=prod"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "17.0.23",
+    "@azure/communication-chat": "1.1.0",
+    "@azure/communication-common": "1.1.0",
+    "@azure/msal-browser": "^2.21.0",
+    "typescript": "^3.4.1",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0",
+    "awesome-typescript-loader": "5.2.1",
+    "source-map-loader": "^0.2.4",
+    "dotenv-webpack": "7.1.0"
+  }
+}
