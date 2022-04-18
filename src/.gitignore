@@ -9,6 +9,14 @@
 *.user
 *.userosscache
 *.sln.docstates
+.env
+.env.[Dd]evelopment
+.env.[Pp]roduction
+.env.[Tt]est
+appsettings.json
+appsettings.[Dd]evelopment
+appsettings.[Pp]roduction
+appsettings.[Tt]est
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -348,7 +356,6 @@ MigrationBackup/
 ## Visual studio for Mac
 ##
 
-
 # globs
 Makefile.in
 *.userprefs
@@ -374,7 +381,6 @@ test-results/
 
 # Icon must end with two \r
 Icon
-
 
 # Thumbnails
 ._*
@@ -454,3 +460,15 @@ dist
 
 ## Users settings
 **/appsettings.Development.json
+
+# Yarn 2
+.yarn/*
+!.yarn/cache/
+!.yarn/releases/
+!.yarn/plugins/
+!.yarn/versions/
+!.yarn/sdks/
+
+# Typescript
+dist/
+tsconfig.tsbuildinfo
