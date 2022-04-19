@@ -44,7 +44,7 @@ export class PhotoUtil {
             return this.pics[id];
         }
 
-        var resp = await fetch(`https://graph.microsoft.com/v1.0/users/${id}/photos/48x48/$value`, {
+        const resp = await fetch(`https://graph.microsoft.com/v1.0/users/${id}/photos/48x48/$value`, {
             method: "GET",
             headers: new Headers({
                 "Authorization": "Bearer " + token,
@@ -57,7 +57,7 @@ export class PhotoUtil {
             return this.emptyPic;
         }
 
-        var blob = await resp.blob();
+        const blob = await resp.blob();
         const url = window.URL || window.webkitURL;
         const objectURL = url.createObjectURL(blob);
         this.pics[id] = objectURL;

@@ -3,7 +3,7 @@ import { Mapping } from "../Models/Mapping";
 export class ApiUtil {
 
     public static getMapping = async (entityId: string, idToken: string) => {
-        var resp = await fetch(`/api/mapping/${entityId}`, {
+        const resp = await fetch(`/api/mapping/${entityId}`, {
             method: "GET",
             headers: new Headers({
                 "Authorization": "Bearer " + idToken
@@ -17,7 +17,7 @@ export class ApiUtil {
     };
 
     public static updateMapping = async (mapping: Mapping, idToken: string) => {
-        var resp = await fetch(`/api/mapping`, {
+        const resp = await fetch(`/api/mapping`, {
             method: "PATCH",
             body: JSON.stringify(mapping),
             headers: new Headers({
