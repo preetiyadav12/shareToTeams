@@ -32,6 +32,7 @@ Embedded chat initialization to support two start modes
     + Auto
 
 ##### Unique Entity ID 
+- Optional
 ##### DOM element
 
 ----------------------------------------------------
