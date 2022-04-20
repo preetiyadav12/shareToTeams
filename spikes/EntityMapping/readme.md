@@ -1,10 +1,13 @@
 # Download the code
+
 Find the project for the embedded chat on [Azure Devops](https://dev.azure.com/csedevs/EmbeddedChats)
 
 # Overview
+
 The Sample app that features embedded chat control that syncs with Teams group chats.
 
 # Prerequisites
+
 * (A) An Azure account with an active subscription, You'll need to record your Application details registered in Azure Active Directory.
 * (B) Register a embedded chat application in Azure Active Directory, Azure AD applications in the Microsoft identity platform can provide authentication and authorization services for applications and its users. For applications to perform identity and access management (IAM), they need to be registered with the Microsoft identity platform.
 Register a single-tenant Azure AD application with a client secret in your tenant.
@@ -12,7 +15,7 @@ Register a single-tenant Azure AD application with a client secret in your tenan
 2. Click on "New registration", and create an Azure AD application.
 
 * Name: The name of your application. If you are following the sample for a default deployment, we recommend "Embedded Chat".
-Note: This name is not visible to users.
+> Note: This name is not visible to users.
 * Supported account types: Select "Accounts in this organizational directory only  (Single tenant)
 )"
 3.  Click on "Register". You'll be taken to the app's "Overview" page.
@@ -47,4 +50,5 @@ profile pemrissions.
 - Get the ACS Connection String, AppId, AppPassword, TenantId, HostDomain, Azure Cosmos ConnectionString and Database name from the Azure portal. Once you have these value  add these to the \spikes\EntityMapping\appsettings.json file. 
 
 ## Local Run
+
 Install dependencies, build and run the project
