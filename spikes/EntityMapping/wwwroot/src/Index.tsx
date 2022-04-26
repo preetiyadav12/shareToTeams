@@ -4,8 +4,8 @@ import "./index.css";
 import Embed from "./Components/Embed";
 
 // get all elements with the teams-embed-entityid attribute and bootstrap app to it
-let scriptElements = document.querySelectorAll("[teams-embed-client-id]");
-let embedElements = document.querySelectorAll("[teams-embed-entityid]");
+const scriptElements = document.querySelectorAll("[teams-embed-client-id]");
+const embedElements = document.querySelectorAll("[teams-embed-entityid]");
 
 if (scriptElements.length === 1)
 {
@@ -15,7 +15,7 @@ if (scriptElements.length === 1)
     embedElements.forEach((element:Element, index: number) => {
         console.log("bootstrap react");
         ReactDOM.render(
-            <div className="wrapper" style={{display: "flex", height: "100%", width: "100%"}}>
+            <div className="wrapper">
                 <Embed 
                     entityId={element.getAttribute("teams-embed-entityid")} 
                     chatTitle={element.getAttribute("teams-embed-chat-title")} 

@@ -1,7 +1,7 @@
 {
   "AzureCosmos": {
     "ConnectionString": "COSMOS_DB_CONNECTION_STRING",
-    "DatabaseName": "Praise"
+    "DatabaseName": "COSMOS_DB_DATABASE_NAME"
   },
   "AzureAD": {
     "TenantId": "TENANT_ID",

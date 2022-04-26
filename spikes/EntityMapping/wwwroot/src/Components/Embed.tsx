@@ -2,7 +2,7 @@ import * as msal from "@azure/msal-browser";
 import { ChatClient, ChatMessage as CM, CreateChatThreadOptions, CreateChatThreadRequest } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
 import * as React from "react";
-import { Chat, Input, Provider, teamsTheme, Avatar, Divider, popupContentSlotClassNames, ChatMessage } from "@fluentui/react-northstar";
+import { Chat, Input, Provider, teamsTheme, Avatar, Divider } from "@fluentui/react-northstar";
 import { SendIcon } from '@fluentui/react-icons-northstar';
 import ReactHtmlParser from "react-html-parser";
 
@@ -57,7 +57,7 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
             messages: [],
             profilePics: {}
         };
-    };
+    }
 
     componentDidMount = async () => {
         // HACK...get client_id from url
@@ -65,8 +65,8 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
         const accounts = this.msalInstance.getAllAccounts();
 
         // if the user is signed in, acquire the token
-        if (accounts.length != 0) {
-            var resp = await this.msalInstance.acquireTokenSilent({
+        if (accounts.length !== 0) {
+            const resp = await this.msalInstance.acquireTokenSilent({
                 scopes: ["https://graph.microsoft.com/.default"],
                 account: accounts[0]
             });
@@ -88,7 +88,7 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
 
     initializeAcsAsync = async (authResult:msal.AuthenticationResult) => {
         // try to get the mapping for this entity id
-        let response:InitResponse = await ApiUtil.getMapping(this.props.entityId, authResult.idToken);
+        const response:InitResponse = await ApiUtil.getMapping(this.props.entityId, authResult.idToken);
 
         // initialize the ACS Client
         this.creds = new AzureCommunicationTokenCredential(response.acsToken);
@@ -96,8 +96,8 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
         await this.chatClient.startRealtimeNotifications();
 
         // determine if this is a new thread or not
-        let messages:CM[] = [];
-        let profilePics = this.state.profilePics;
+        const messages:CM[] = [];
+        const profilePics = this.state.profilePics;
         if (!response.mapping.threadId || response.mapping.threadId === "") {
             // this is a new thread...start it
             // TODO...who to start this with???
@@ -123,11 +123,11 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
         }
         else {
             // load the existing thread messages            
-            let chatThreadClient = await this.chatClient.getChatThreadClient(response.mapping.threadId);
+            const chatThreadClient = await this.chatClient.getChatThreadClient(response.mapping.threadId);
             for await (const chatMessage of chatThreadClient.listMessages()) {
                 messages.unshift(chatMessage);
                 if (chatMessage.sender && !profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
-                    let userId = (chatMessage.sender as any).microsoftTeamsUserId;
+                    const userId = (chatMessage.sender as any).microsoftTeamsUserId;
                     profilePics[userId] = await this.photoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
                 }
             }
@@ -145,7 +145,7 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
 
         // listen for events
         this.chatClient.on("chatMessageReceived", async (e) => {
-            let messages = this.state.messages;
+            const messages = this.state.messages;
             messages.push({
                 id: e.id,
                 createdOn: e.createdOn,
@@ -157,9 +157,9 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
                 version: e.version
             });
 
-            let profilePics = this.state.profilePics;
+            const profilePics = this.state.profilePics;
             if (e.sender && !profilePics[(e.sender as any).microsoftTeamsUserId]) {
-                let userId = (e.sender as any).microsoftTeamsUserId;
+                const userId = (e.sender as any).microsoftTeamsUserId;
                 profilePics[userId] = await this.photoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
             }
             this.setState({messages, profilePics});
@@ -195,7 +195,7 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
     }
 
     render = () => {
-        let items:any[] = this.state.messages.map((message:CM, index: number) => {
+        const items:any[] = this.state.messages.map((message:CM, index: number) => {
             let item:any;
       
             if (message.sender && (message.type == "html" || message.type == "text"))
@@ -228,7 +228,7 @@ export default class Embed extends React.Component<EmbedProps, EmbedState> {
                 };
             }
             else if (message.type == "participantAdded") {
-                let msg = (message.content.participants.length > 1) 
+                const msg = (message.content.participants.length > 1) 
                     ? `${message.content.participants[0].displayName} and ${message.content.participants.length - 1} others added to chat` 
                     : `${message.content.participants[0].displayName} added to chat`;
                 item = {
