@@ -457,6 +457,7 @@ dist
 # dotenv environment variables file
 **/.env.dev
 **/.env.prod
+.env
 
 ## Users settings
 **/appsettings.Development.json
