@@ -10,8 +10,14 @@ sequenceDiagram
     Embedded Chat Control-->>User: Render list of participants
     User->>Embedded Chat Control: Click Add people
     Embedded Chat Control-->>User: Render control to search and add people
-    Embedded Chat Control->>Azure Function: Search Add User
-    Azure Function-->>Embedded Chat Control: Return List of Users
-    User->>Azure Function: Add User
-    Azure Function-->>Embedded Chat Control: Return and Update view
+    loop For Every User
+        Embedded Chat Control->>Azure Function: Search For a User
+        Azure Function-->>Embedded Chat Control: Return List of Users
+        User->>Embedded Chat Control: Select User
+        Embedded Chat Control-->>Embedded Chat Control: Add selected User to input box
+    end
+    User->>Azure Function: Click Add button
+    Azure Function->>Azure Function: Add all users to the chat
+    Azure Function-->>Embedded Chat Control: Return response and Update with new participants
+    
 ```
