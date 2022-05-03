@@ -1,4 +1,6 @@
-%% Message Recieved Sequence Diagram
+# Message Recieved Sequence Diagram
+
+```mermaid
 
 sequenceDiagram
     participant User
@@ -33,6 +35,8 @@ sequenceDiagram
     3rd Party App->> User: Display Message Recieved
     deactivate 3rd Party App
     deactivate User
+
+```
     
    
     

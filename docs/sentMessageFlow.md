@@ -1,4 +1,6 @@
-%% Sent Message Flow Sequence Diagram
+# Sent Message Flow Sequence Diagram
+
+``` mermaid
 
 sequenceDiagram
     participant User
@@ -31,6 +33,8 @@ sequenceDiagram
     3rd Party App-->>User: Render message for user
     deactivate 3rd Party App
     deactivate User
+
+```
 
 
     
