@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MS Teams Embedded Chat Sample</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <script src="https://msembedchatdevsta.blob.core.windows.net/$web/embedChat.js"></script> -->
+    <script src="node_modules/@msteams/embedchat/dist/embedChat.js"></script>
+  </head>
+  <body>
+    <h3>👋 Embedded Chat</h3>
+    <div id="embed" style="height: 400px"></div>
+    <script lang="javascript">
+      $(document).ready(() => {
+        const config = {
+          hostDomain: "localhost:3000",
+          apiBaseUrl: "http://localhost:7071",
+          clientId: "c7dffc2e-43bb-46c3-9e03-5dfd2116ff88",
+          tenant: "8385af7f-4e3e-42b9-a17d-0a43eb16aefd",
+          acsEndpoint:
+            "endpoint=https://ms-demos-acs-embchat-dannyg.communication.azure.com/"
+        };
+
+        // const chat = EmbeddedChat.EmbeddedChat(config);
+        const element = document.getElementById('embed');
+        element.innerHTML = "hello";
+
+        const chat = new MSTeamsExt.EmbeddedChat(config);
+        element.innerHTML = chat.PrintName("Danny Garber");
+
+            // chat = new EmbeddedChat({
+            //   localhost: "localhost:3000",
+            //   apiBaseUrl: "http://localhost:7071",
+            //   clientId: "",
+            //   tenant: "",
+            //   acsEndpoint: "",
+            // });
+            // chat.renderEmbed(document.getElementById("embed"), "0000349");
+      });
+    </script>
+  </body>
+</html>
