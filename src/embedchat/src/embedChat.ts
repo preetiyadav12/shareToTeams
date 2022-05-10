@@ -58,6 +58,59 @@ export class EmbeddedChat {
     // // initialize the ACS Client
     this.creds = new AzureCommunicationTokenCredential(entityState.acsToken!);
     this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
+<<<<<<< HEAD
+    await this.chatClient.startRealtimeNotifications();
+
+    // determine if this is a new thread or not
+    const messages: CM[] = [];
+    if (!entityState.threadId || entityState.threadId === "") {
+      // this is a new thread...start it
+      console.log("TODO");
+    } else {
+      // load the existing thread messages
+      const chatThreadClient = await this.chatClient.getChatThreadClient(
+        entityState.threadId
+      );
+      console.log(chatThreadClient);
+      for await (const chatMessage of chatThreadClient.listMessages()) {
+        messages.unshift(chatMessage);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (
+          chatMessage.sender &&
+          !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const userId = (chatMessage.sender as any).microsoftTeamsUserId;
+          this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(
+            token.accessToken,
+            userId
+          );
+        }
+      }
+    }
+
+    // listen for events
+    this.chatClient.on("chatMessageReceived", async (e) => {
+      console.log("TODO: chatMessageReceived");
+      console.log(e);
+    });
+    this.chatClient.on("chatMessageEdited", async (e) => {
+      console.log("TODO: chatMessageEdited");
+      console.log(e);
+    });
+    this.chatClient.on("chatMessageDeleted", async (e) => {
+      console.log("TODO: chatMessageDeleted");
+      console.log(e);
+    });
+    this.chatClient.on("participantsAdded", async (e) => {
+      console.log("TODO: participantsAdded");
+      console.log(e);
+    });
+    this.chatClient.on("participantsRemoved", async (e) => {
+      console.log("TODO: participantsRemoved");
+      console.log(e);
+    });
+=======
     // await this.chatClient.startRealtimeNotifications();
 
     // // determine if this is a new thread or not
@@ -109,5 +162,6 @@ export class EmbeddedChat {
     //   console.log("TODO: participantsRemoved");
     //   console.log(e);
     // });
+>>>>>>> b3e7e82ad3539cf5bd4b468fd6faeddc6de5f816
   }
 }

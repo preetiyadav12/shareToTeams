@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
+<<<<<<< HEAD
+import MSTeamsExt, { AppSettings, EntityState } from "@msteams/embedchat";
+=======
 import MSTeams, { AppSettings, EntityState } from "@msteams/embedchat";
+>>>>>>> b3e7e82ad3539cf5bd4b468fd6faeddc6de5f816
 import "./App.css";
 
 const config: AppSettings = {
@@ -21,12 +25,23 @@ const App = () => {
   };
 
   useEffect(() => {
+<<<<<<< HEAD
+    const embedChat = new MSTeamsExt.EmbeddedChat(config);
+    const data = embedChat.PrintName("Hello from React App!") as string;
+    setEntityState(data);
+    // if (entityId !== "") {
+    //   embedChat.getEntityMapping(entityId).then((data) => {
+    //     setEntityState(data);
+    //   });
+    // }
+=======
     const embedChat = new MSTeams.EmbeddedChat(config, idToken);
     if (entityId !== "") {
       embedChat.getEntityMapping(entityId).then((data) => {
         setEntityState(data);
       });
     }
+>>>>>>> b3e7e82ad3539cf5bd4b468fd6faeddc6de5f816
   }, [entityId, entityState, idToken]);
 
   return (
