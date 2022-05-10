@@ -13,18 +13,11 @@
   <body>
     <h3>👋 Embedded Chat</h3>
     <div id="embed" style="height: 400px"></div>
-<<<<<<< HEAD
     <p id="msg"></p>
     <script lang="javascript">
       $(document).ready(() => {
         const config = {
           hostDomain: "msembedchatdevsta.blob.core.windows.net/$web",
-=======
-    <script lang="javascript">
-      $(document).ready(() => {
-        const config = {
-          hostDomain: "localhost:3000",
->>>>>>> b3e7e82ad3539cf5bd4b468fd6faeddc6de5f816
           apiBaseUrl: "http://localhost:7071",
           clientId: "c7dffc2e-43bb-46c3-9e03-5dfd2116ff88",
           tenant: "8385af7f-4e3e-42b9-a17d-0a43eb16aefd",
@@ -38,23 +31,11 @@
 
         const chat = new MSTeamsExt.EmbeddedChat(config);
         element.innerHTML = chat.PrintName("Danny Garber");
-<<<<<<< HEAD
         chat.renderEmbed(element, "0001").then(() => {
           document.getElementById("msg").innerText = "Rendered successfully!";
         }).catch((error) => {
           document.getElementById("msg").innerText = error.message;
         });
-=======
-
-            // chat = new EmbeddedChat({
-            //   localhost: "localhost:3000",
-            //   apiBaseUrl: "http://localhost:7071",
-            //   clientId: "",
-            //   tenant: "",
-            //   acsEndpoint: "",
-            // });
-            // chat.renderEmbed(document.getElementById("embed"), "0000349");
->>>>>>> b3e7e82ad3539cf5bd4b468fd6faeddc6de5f816
       });
     </script>
   </body>
