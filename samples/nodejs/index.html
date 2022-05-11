@@ -9,34 +9,49 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- <script src="https://msembedchatdevsta.blob.core.windows.net/$web/embedChat.js"></script> -->
     <script src="node_modules/@msteams/embedchat/dist/embedChat.js"></script>
-  </head>
-  <body>
-    <h3>👋 Embedded Chat</h3>
-    <div id="embed" style="height: 400px"></div>
-    <p id="msg"></p>
-    <script lang="javascript">
+    <script>
       $(document).ready(() => {
-        const config = {
+        var EmbeddedChat = MSTeamsExt.EmbeddedChat;
+
+        var appSettings = {
           hostDomain: "msembedchatdevsta.blob.core.windows.net/$web",
           apiBaseUrl: "http://localhost:7071",
           clientId: "c7dffc2e-43bb-46c3-9e03-5dfd2116ff88",
           tenant: "8385af7f-4e3e-42b9-a17d-0a43eb16aefd",
           acsEndpoint:
-            "endpoint=https://ms-demos-acs-embchat-dannyg.communication.azure.com/"
+            "endpoint=https://ms-demos-acs-embchat-dannyg.communication.azure.com/",
         };
 
-        // const chat = EmbeddedChat.EmbeddedChat(config);
-        const element = document.getElementById('embed');
-        element.innerHTML = "hello";
+        var chatTitleDiv = document.getElementById("title");
+        var chatWindowDiv = document.getElementById("embed");
+        var logsDiv = document.getElementById("log");
 
-        const chat = new MSTeamsExt.EmbeddedChat(config);
-        element.innerHTML = chat.PrintName("Danny Garber");
-        chat.renderEmbed(element, "0001").then(() => {
-          document.getElementById("msg").innerText = "Rendered successfully!";
-        }).catch((error) => {
-          document.getElementById("msg").innerText = error.message;
-        });
+        var embchat = new EmbeddedChat(appSettings);
+
+        var App = function (chat) {
+          return `<h1>${chat.PrintName("Danny")}</h1>`;
+        };
+
+        var renderChat = (Chat, Root, title, where, what, log) => {
+          log.innerHTML = `Entity Id: ${what}`;
+          title.innerHTML = Root(Chat);
+          Chat.renderEmbed(where, what)
+            .then(() => {
+              log.innerHTML = "Rendered successfully!";
+            })
+            .catch((error) => {
+              log.innerHTML = error.message;
+            });
+        };
+
+        renderChat(embchat, App, chatTitleDiv, chatWindowDiv, "0001", logsDiv);
       });
     </script>
+  </head>
+  <body>
+    <h3>👋 Embedded Chat</h3>
+    <div id="title"></div>
+    <div id="embed" style="height: 400px"></div>
+    <div id="log" title="Logs: " style="border: 1px; font-size: large"></div>
   </body>
 </html>

@@ -23,13 +23,14 @@
     "unpublish:local": "yarn unlink",
     "publish:local": "yarn link",
     "npm:local": "run-s unpublish:local publish:local",
-    "build:debug": "tsc --build ./tsconfig.build.json && webpack --config ./webpack.debug.config.ts",
+    "prepare": "tsc --build ./tsconfig.build.json && webpack --config ./webpack.dev.config.ts",
     "build:dev": "tsc --build ./tsconfig.build.json && webpack --config ./webpack.dev.config.ts",
     "build:deploy": "tsc --build ./tsconfig.build.json && webpack --config ./webpack.prod.config.ts",
     "build": "run-s build:dev npm:local",
     "build:prod": "run-s build:deploy npm:local",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
