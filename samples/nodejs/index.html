@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MS Teams Embedded Chat Sample</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <script src="https://msembedchatdevsta.blob.core.windows.net/$web/embedChat.js"></script> -->
+    <script src="node_modules/@msteams/embedchat/dist/embedChat.js"></script>
+    <script>
+      $(document).ready(() => {
+        var EmbeddedChat = MSTeamsExt.EmbeddedChat;
+
+        var appSettings = {
+          hostDomain: "msembedchatdevsta.blob.core.windows.net/$web",
+          apiBaseUrl: "http://localhost:7071",
+          clientId: "c7dffc2e-43bb-46c3-9e03-5dfd2116ff88",
+          tenant: "8385af7f-4e3e-42b9-a17d-0a43eb16aefd",
+          acsEndpoint:
+            "endpoint=https://ms-demos-acs-embchat-dannyg.communication.azure.com/",
+        };
+
+        var chatTitleDiv = document.getElementById("title");
+        var chatWindowDiv = document.getElementById("embed");
+        var logsDiv = document.getElementById("log");
+
+        var embchat = new EmbeddedChat(appSettings);
+
+        var App = function (chat) {
+          return `<h1>${chat.PrintName("Danny")}</h1>`;
+        };
+
+        var renderChat = (Chat, Root, title, where, what, log) => {
+          log.innerHTML = `Entity Id: ${what}`;
+          title.innerHTML = Root(Chat);
+          Chat.renderEmbed(where, what)
+            .then(() => {
+              log.innerHTML = "Rendered successfully!";
+            })
+            .catch((error) => {
+              log.innerHTML = error.message;
+            });
+        };
+
+        renderChat(embchat, App, chatTitleDiv, chatWindowDiv, "0001", logsDiv);
+      });
+    </script>
+  </head>
+  <body>
+    <h3>👋 Embedded Chat</h3>
+    <div id="title"></div>
+    <div id="embed" style="height: 400px"></div>
+    <div id="log" title="Logs: " style="border: 1px; font-size: large"></div>
+  </body>
+</html>

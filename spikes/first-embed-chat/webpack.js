@@ -2,7 +2,7 @@ const webpack = require("webpack");
 const Dotenv = require("dotenv-webpack");
 const path = require("path");
 
-var config = {
+const config = {
     mode: "development",
     context: path.resolve(__dirname),
     resolve: {
