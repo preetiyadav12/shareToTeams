@@ -56,9 +56,7 @@ export class Auth {
     } else {
       // No user signed in
       if (window.location.href.indexOf("?mode=interactive") === -1) {
-        console.log(
-          "This was an attempt at silent auth that failed...return null"
-        );
+        console.log("This was an attempt at silent auth that failed...return null");
         parent.postMessage(null, "*");
       } else {
         console.log("This was an attempt at interative auth...start redirect");

@@ -12,9 +12,7 @@ export class EntityApi {
     console.log(`API Base Url: ${this.config.apiBaseUrl}`);
   }
 
-  public getMapping = async (
-    entityId: string
-  ): Promise<EntityState | undefined> => {
+  public getMapping = async (entityId: string): Promise<EntityState | undefined> => {
     if (entityId.length === 0) {
       throw new Error("Entity Id cannot be emtpy!");
     }
@@ -32,10 +30,7 @@ export class EntityApi {
       body: JSON.stringify(entityRequest),
     };
 
-    const resp = await fetch(
-      `${this.config.apiBaseUrl}/api/entity/mapping`,
-      requestOptions
-    );
+    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping`, requestOptions);
 
     if (!resp.ok) return undefined;
 
@@ -52,10 +47,7 @@ export class EntityApi {
       body: JSON.stringify(entity),
     };
 
-    const resp = await fetch(
-      `${this.config.apiBaseUrl}/api/entity/mapping/update`,
-      requestOptions
-    );
+    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping/update`, requestOptions);
 
     return resp.ok;
   };

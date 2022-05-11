@@ -2,10 +2,7 @@ import { AccessToken } from "../models";
 import { AppSettings } from "../config/appSettings";
 
 export class AuthUtil {
-  public static async acquireToken(
-    element: Element,
-    config: AppSettings
-  ): Promise<AccessToken | undefined> {
+  public static async acquireToken(element: Element, config: AppSettings): Promise<AccessToken | undefined> {
     // first try silent auth
     const token = await this.acquireTokenSilent(element, config);
     if (token) return token;
@@ -17,7 +14,7 @@ export class AuthUtil {
         let popupRef = window.open(
           `https://${config.hostDomain}/auth.html?mode=interactive`,
           "Teams Embed",
-          "width=700,height=700,toolbar=yes"
+          "width=700,height=700,toolbar=yes",
         );
         window.addEventListener("message", (e) => {
           element.removeChild(btn); //TODO: check if successful
@@ -36,10 +33,7 @@ export class AuthUtil {
     }
   }
 
-  private static async acquireTokenSilent(
-    element: Element,
-    config: AppSettings
-  ): Promise<AccessToken> {
+  private static async acquireTokenSilent(element: Element, config: AppSettings): Promise<AccessToken> {
     return new Promise((resolve) => {
       const loginframe = document.createElement("iframe");
       loginframe.setAttribute("src", `https://${config.hostDomain}/auth.html`);
