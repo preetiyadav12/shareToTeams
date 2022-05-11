@@ -34,7 +34,6 @@ async function main() {
   // Create the container
   await containerClient.createIfNotExists({ access: "container" });
   console.log(`Container ${containerName} was created successfully. `);
-  console.log(`\nUploading to the container ${containerName}`);
 
   const getBlobName = (originalName) => {
     const fileParts = originalName.split("/");
@@ -61,10 +60,12 @@ async function main() {
       };
     }
 
-    console.log(`Uploading ${fileName} into ${azureStorageAccountName}/${containerName}/${blobName}...`);
+    console.log(`Uploading ${fileName}...`);
 
     await blockBlobClient.uploadFile(fileName, options);
-    console.log(`Blob ${blobName} was uploaded successfully.`);
+    console.log(
+      `${fileName} was successfully uploaded to: https://${azureStorageAccountName}.blob.core.windows.net/${containerName}/${blobName}`,
+    );
   });
 }
 
