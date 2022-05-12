@@ -3,10 +3,13 @@ import { HotModuleReplacementPlugin } from "webpack";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import ESLintPlugin from "eslint-webpack-plugin";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const PACKAGE_NAME = "MSTeamsExt";
 const output_dir = "dist";
-const embedChatUrl = "https://msembedchatdevsta.blob.core.windows.net/$web";
+const embedChatUrl = `https://${process.env.AZURE_STORAGE_ACCOUNTNAME}.blob.core.windows.net/${process.env.CONTAINER}`;
 const port = 4000;
 
 module.exports = {

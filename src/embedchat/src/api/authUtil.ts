@@ -5,9 +5,8 @@ export class AuthUtil {
   public static async acquireToken(element: Element, config: AppSettings): Promise<AccessToken | undefined> {
     // first try silent auth
     return new Promise((resolve, reject) => {
-      this.acquireTokenSilent(element, config).then((token:AccessToken) => {
-        if (token)
-          resolve(token);
+      this.acquireTokenSilent(element, config).then((token: AccessToken) => {
+        if (token) resolve(token);
         else {
           // requires an interactive login
           const btn = document.createElement("button");
@@ -31,8 +30,8 @@ export class AuthUtil {
             // set timer in case they close the window
             const timer = setInterval(() => {
               if (popupRef && popupRef.closed) {
-                  clearInterval(timer);
-                  reject();
+                clearInterval(timer);
+                reject();
               }
             }, 500);
           });
@@ -40,14 +39,17 @@ export class AuthUtil {
           // add button to the DOM
           element.append(btn);
         }
-      })
+      });
     });
   }
 
   private static async acquireTokenSilent(element: Element, config: AppSettings): Promise<AccessToken> {
     return new Promise((resolve) => {
       const loginframe = document.createElement("iframe");
-      loginframe.setAttribute("src", `https://${config.hostDomain}/auth.html?client_id=${config.clientId}&host_uri=${config.hostDomain}&tenant=${config.tenant}`);
+      loginframe.setAttribute(
+        "src",
+        `https://${config.hostDomain}/auth.html?client_id=${config.clientId}&host_uri=${config.hostDomain}&tenant=${config.tenant}`,
+      );
       loginframe.style.display = "none";
       element.append(loginframe);
       window.addEventListener("message", (event) => {

@@ -75,6 +75,10 @@ re-create on your local machine before you can run the project:
   application is located. You can use the provided `.env.template` file to clone
   it into `.env` or `.env.development` file. Use your settings to fill the
   content of that file prior to building React App sample application.
+- **EmbedChat Project Environment Variables**: for uploading bundle output files
+  to Azure Storage Blob, you need to create a local environment variables file
+  `.env`, which you can clone from `.env.template` and then fill all required
+  fields.
 
 ## Use of NPM Scripts in the project
 
@@ -111,6 +115,12 @@ pushing the commit as well as the tag.
 
 `"postversion" : "git push && git push --tags"`
 
+**upload** will run after the build and publishing are complete. It will upload
+all bundle files that should be listed in the `.env` file to the specified Azure
+Storage Blob container.
+
+`"upload" : "upload": "node uploadpkg.js"`
+
 This is how the **scripts** section in package.json looks like:
 
 ```json
@@ -120,19 +130,20 @@ This is how the **scripts** section in package.json looks like:
     "unpublish:local": "yarn unlink",
     "publish:local": "yarn link",
     "npm:local": "run-s unpublish:local publish:local",
-    "prepare": "yarn build:dev",
+    "prepare": "run-s build:dev publish:local upload",
     "prepublishOnly": "yarn test && yarn lint",
     "preversion": "yarn lint",
     "build:dev": "tsc --build ./tsconfig.build.json && webpack --config ./webpack.dev.config.ts",
     "build:deploy": "tsc --build ./tsconfig.build.json && webpack --config ./webpack.prod.config.ts",
-    "build": "run-s build:dev npm:local",
-    "build:prod": "run-s build:deploy npm:local",
+    "build": "run-s build:dev npm:local upload",
+    "build:prod": "run-s build:deploy npm:local upload",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "version": "yarn format && git add .",
     "postversion": "git push && git push --tags",
-    "test": "jest --config jestconfig.json"
+    "test": "jest --config jestconfig.json",
+    "upload": "node uploadpkg.js"
 }
 
 ```
@@ -144,9 +155,12 @@ This is how the **scripts** section in package.json looks like:
    your sample projects. This is done by running **prepare** command as it
    explained earlier.
 
-2. Then later, when you need to re-build your package, just simply use this
-   command: `yarn build` or `yarn build:prod` for the production version of the
-   package.
+2. Now, run `yarn link` to publish locally the new `@msteams/embedchat` package
+   on your machine.
+
+Then later, when you need to re-build your package, just simply use this
+command: `yarn build` or `yarn build:prod` for the production version of the
+package.
 
 > Note: You can build the package for `development` or `production`
 > environments. The `development` version will produce the unoptimized, not
@@ -186,6 +200,20 @@ npm install @msteams/embedchat
 ```
 
 - Use it 💪
+
+1. First, you'd need to start your API project in a debug mode unless it has
+   already been deployed to Azure and you reference it directly from the Azure
+   public endpoint. If you're running on Windows, then you're in luck - most
+   likely you've installed the latest Microsoft Visual Studio 2022, which
+   includes the Azurite service that replaced the depreciated Azure Storage
+   Emulator. But if you're still using the older Visual Studio 2019 or your
+   local machine is Mac, then you'd need to install and run `Azurite` service on
+   your machine prior to running the `API` project in a debug mode.
+
+2. To launch your local client HTML file that references the Embedded Chat
+   scripts, you can either use the `Live Server` or you can use online service
+   like `Codepen.io`. Here's example of the local HTML file that references the
+   EmbeddedChat.js.
 
 ```html
 <!DOCTYPE html>
