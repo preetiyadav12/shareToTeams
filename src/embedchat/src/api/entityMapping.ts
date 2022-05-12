@@ -12,14 +12,10 @@ export class EntityApi {
     console.log(`API Base Url: ${this.config.apiBaseUrl}`);
   }
 
-  public getMapping = async (entityId: string): Promise<EntityState | undefined> => {
-    if (entityId.length === 0) {
+  public getMapping = async (entityRequest: EntityState): Promise<EntityState | undefined> => {
+    if (!entityRequest) {
       throw new Error("Entity Id cannot be emtpy!");
     }
-
-    const entityRequest: EntityState = {
-      entityId,
-    };
 
     const requestOptions = {
       method: "POST",

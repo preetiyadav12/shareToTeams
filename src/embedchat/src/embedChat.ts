@@ -1,4 +1,4 @@
-import { ChatClient, ChatClientOptions, ChatMessage as CM } from "@azure/communication-chat";
+import { ChatClient, ChatClientOptions, ChatMessage as CM, CreateChatThreadRequest } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
 import { AccessToken, EntityState } from "./models";
 import { AuthUtil } from "./api/authUtil";
@@ -24,7 +24,10 @@ export class EmbeddedChat {
 
   public async getEntityMapping(entityId: string, token: string): Promise<EntityState | undefined> {
     const entityApi = new EntityApi(this.appSettings, token);
-    const response = await entityApi.getMapping(entityId);
+    const response = await entityApi.getMapping({
+      entityId,
+      acsToken: token,
+    });
     return response;
   }
 
@@ -45,24 +48,39 @@ export class EmbeddedChat {
     const entityApi = new EntityApi(this.appSettings, authResult.accessToken);
 
     // try to get the mapping for this entity id
-    const entityState: EntityState = (await entityApi.getMapping(entityId)) as EntityState;
+    const entityState: EntityState = (await entityApi.getMapping({
+      entityId,
+      acsToken: authResult.accessToken,
+    })) as EntityState;
 
     console.log(`Entity Id: ${entityState.entityId}`);
     console.log(`ACS User Id: ${entityState.acsUserId}`);
     console.log(`Thread Id: ${entityState.threadId}`);
-    console.log(`ACS Token: ${entityState.acsToken}`);
 
     // // initialize the ACS Client
     console.log("Initializing ACS Client...");
-    this.creds = new AzureCommunicationTokenCredential(entityState.acsToken!);
+    this.creds = new AzureCommunicationTokenCredential(authResult.accessToken);
     this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
+
+    console.log("Successfully initialized ACS Chat Client!");
+    const threads = this.chatClient.listChatThreads();
+    console.log(`Total of chat threads for this user is: ${threads?.byPage.length}`);
+
     await this.chatClient.startRealtimeNotifications();
 
     // determine if this is a new thread or not
     const messages: CM[] = [];
     if (!entityState.threadId || entityState.threadId === "") {
       // this is a new thread...start it
-      console.log("TODO");
+      console.log("Starting a new Chat thread...");
+      const chatRequest: CreateChatThreadRequest = {
+        topic: entityId,
+      };
+      const chatThreadResult = await this.chatClient.createChatThread(chatRequest);
+
+      console.log(
+        `New Chat Thread was created for the topic: ${chatThreadResult.chatThread?.topic} and chat Id: ${chatThreadResult.chatThread?.id}`,
+      );
     } else {
       // load the existing thread messages
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
