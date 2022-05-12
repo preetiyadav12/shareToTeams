@@ -22,9 +22,10 @@ export class EmbeddedChat {
     return msg;
   };
 
-  public async echoMessage(message: string): Promise<string | undefined> {
+  public EchoMessage = (message: string): string => {
+    console.log(message);
     return message;
-  }
+  };
 
   public async getEntityMapping(entityId: string, token: string): Promise<EntityState | undefined> {
     const entityApi = new EntityApi(this.appSettings, token);
@@ -33,64 +34,74 @@ export class EmbeddedChat {
   }
 
   public async renderEmbed(element: Element, entityId: string) {
-    const idToken = await AuthUtil.acquireToken(element, this.appSettings);
-    if (!idToken) {
-      console.log("Token cannot be Null!");
-      return;
-    }
+    console.log(`HTML Element: ${element.id}`);
+    console.log(`Entity Id: ${entityId}`);
+    AuthUtil.acquireToken(element, this.appSettings).then(async (idToken) => {
+      console.log(`Access Token:${idToken?.accessToken}`);
+      console.log(`Id Token:${idToken?.idToken}`);
+      if (!idToken) {
+        console.log("Token cannot be Null!");
+        return;
+      }
 
-    const entityApi = new EntityApi(this.appSettings, idToken.accessToken);
+      const entityApi = new EntityApi(this.appSettings, idToken.accessToken);
 
-    const token = idToken as AccessToken;
-    // try to get the mapping for this entity id
-    const entityState: EntityState = (await entityApi.getMapping(entityId)) as EntityState;
-    console.log(`ACS Token: ${entityState.acsToken}`);
+      const token = idToken as AccessToken;
 
-    // // initialize the ACS Client
-    this.creds = new AzureCommunicationTokenCredential(entityState.acsToken!);
-    this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
-    await this.chatClient.startRealtimeNotifications();
+      console.log(`Trying to get Entity Mapping. Calling ${this.appSettings.apiBaseUrl}/getMapping`);
+      // try to get the mapping for this entity id
+      const entityState: EntityState = (await entityApi.getMapping(entityId)) as EntityState;
+      console.log(`Entity Id: ${entityState.entityId}`);
+      console.log(`ACS User Id: ${entityState.acsUserId}`);
+      console.log(`Thread Id: ${entityState.threadId}`);
+      console.log(`ACS Token: ${entityState.acsToken}`);
 
-    // determine if this is a new thread or not
-    const messages: CM[] = [];
-    if (!entityState.threadId || entityState.threadId === "") {
-      // this is a new thread...start it
-      console.log("TODO");
-    } else {
-      // load the existing thread messages
-      const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
-      console.log(chatThreadClient);
-      for await (const chatMessage of chatThreadClient.listMessages()) {
-        messages.unshift(chatMessage);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (chatMessage.sender && !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
+      // // initialize the ACS Client
+      this.creds = new AzureCommunicationTokenCredential(entityState.acsToken!);
+      this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
+      await this.chatClient.startRealtimeNotifications();
+
+      // determine if this is a new thread or not
+      const messages: CM[] = [];
+      if (!entityState.threadId || entityState.threadId === "") {
+        // this is a new thread...start it
+        console.log("TODO");
+      } else {
+        // load the existing thread messages
+        const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
+        console.log(chatThreadClient);
+        for await (const chatMessage of chatThreadClient.listMessages()) {
+          messages.unshift(chatMessage);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const userId = (chatMessage.sender as any).microsoftTeamsUserId;
-          this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(token.accessToken, userId);
+          if (chatMessage.sender && !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userId = (chatMessage.sender as any).microsoftTeamsUserId;
+            this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(token.accessToken, userId);
+          }
         }
       }
-    }
 
-    // listen for events
-    this.chatClient.on("chatMessageReceived", async (e) => {
-      console.log("TODO: chatMessageReceived");
-      console.log(e);
-    });
-    this.chatClient.on("chatMessageEdited", async (e) => {
-      console.log("TODO: chatMessageEdited");
-      console.log(e);
-    });
-    this.chatClient.on("chatMessageDeleted", async (e) => {
-      console.log("TODO: chatMessageDeleted");
-      console.log(e);
-    });
-    this.chatClient.on("participantsAdded", async (e) => {
-      console.log("TODO: participantsAdded");
-      console.log(e);
-    });
-    this.chatClient.on("participantsRemoved", async (e) => {
-      console.log("TODO: participantsRemoved");
-      console.log(e);
+      // listen for events
+      this.chatClient.on("chatMessageReceived", async (e) => {
+        console.log("TODO: chatMessageReceived");
+        console.log(e);
+      });
+      this.chatClient.on("chatMessageEdited", async (e) => {
+        console.log("TODO: chatMessageEdited");
+        console.log(e);
+      });
+      this.chatClient.on("chatMessageDeleted", async (e) => {
+        console.log("TODO: chatMessageDeleted");
+        console.log(e);
+      });
+      this.chatClient.on("participantsAdded", async (e) => {
+        console.log("TODO: participantsAdded");
+        console.log(e);
+      });
+      this.chatClient.on("participantsRemoved", async (e) => {
+        console.log("TODO: participantsRemoved");
+        console.log(e);
+      });
     });
   }
 }
