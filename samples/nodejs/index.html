@@ -42,7 +42,7 @@
             })
             .catch((error) => {
               if (error !== undefined) {
-                log.innerHTML = error.description;
+                log.innerHTML = error;
               } else {
                 log.innerHTML = "Failed to load Embedded Chat control.";
               }
