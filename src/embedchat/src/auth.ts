@@ -1,22 +1,49 @@
 import * as msal from "@azure/msal-browser";
-import { AppSettings } from "./config/appSettings";
 
 export class Auth {
-  private appSettings: AppSettings;
   private msalConfig: msal.Configuration;
+  private hostUri:string;
+  private clientId:string;
+  private tenant:string;
 
-  constructor(config: AppSettings) {
-    this.appSettings = config;
+  constructor() {
+    // get configuration
+    if (window.location.search.length > 0) {
+      // get configuration from url parameters and save in session for authorization reply
+      const params = window.location.search.split('&');
+
+      // hostUri
+      const hostUriParam = params.find(i => i.indexOf("host_uri") != -1);
+      this.hostUri = (hostUriParam && hostUriParam.split('=').length == 2) ? hostUriParam.split('=')[1] : "";
+      sessionStorage.setItem("hostUri", this.hostUri);
+
+      // clientId
+      const clientIdParam = params.find(i => i.indexOf("client_id") != -1);
+      this.clientId = (clientIdParam && clientIdParam.split('=').length == 2) ? clientIdParam.split('=')[1] : "";
+      sessionStorage.setItem("clientId", this.clientId);
+
+      // tenant
+      const tenantParam = params.find(i => i.indexOf("tenant") != -1);
+      this.tenant = (tenantParam && tenantParam.split('=').length == 2) ? tenantParam.split('=')[1] : "";
+      sessionStorage.setItem("tenant", this.tenant);
+    }
+    else {
+      // get configuration from session state
+      this.hostUri = sessionStorage.getItem("hostUri") as string;
+      this.clientId = sessionStorage.getItem("clientId") as string;
+      this.tenant = sessionStorage.getItem("tenant") as string;
+    }
+
     this.msalConfig = {
       auth: {
-        clientId: this.appSettings.clientId,
-        redirectUri: `https://${this.appSettings.hostDomain}/auth.html`,
-        authority: `https://login.microsoftonline.com/${this.appSettings.tenant}/`,
+          clientId: this.clientId,
+          redirectUri: `https://${this.hostUri}/auth.html`,
+          authority: `https://login.microsoftonline.com/${this.tenant}/`
       },
       cache: {
-        cacheLocation: "localStorage",
-        storeAuthStateInCookie: true,
-      },
+          cacheLocation: "localStorage",
+          storeAuthStateInCookie: true
+      }
     };
     this.init();
   }
@@ -68,3 +95,4 @@ export class Auth {
     }
   };
 }
+new Auth();

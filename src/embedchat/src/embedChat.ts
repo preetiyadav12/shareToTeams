@@ -33,15 +33,15 @@ export class EmbeddedChat {
   }
 
   public async renderEmbed(element: Element, entityId: string) {
-    const idToken = await AuthUtil.acquireToken(element, this.appSettings);
-    if (!idToken) {
-      console.log("Token cannot be Null!");
+    const authResult = await AuthUtil.acquireToken(element, this.appSettings);
+    console.log(authResult);
+    if (!authResult) {
+      console.log("authResult cannot be null!");
       return;
     }
 
-    const entityApi = new EntityApi(this.appSettings, idToken.accessToken);
+    const entityApi = new EntityApi(this.appSettings, authResult.accessToken);
 
-    const token = idToken as AccessToken;
     // try to get the mapping for this entity id
     const entityState: EntityState = (await entityApi.getMapping(entityId)) as EntityState;
     console.log(`ACS Token: ${entityState.acsToken}`);
@@ -66,7 +66,7 @@ export class EmbeddedChat {
         if (chatMessage.sender && !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const userId = (chatMessage.sender as any).microsoftTeamsUserId;
-          this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(token.accessToken, userId);
+          this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
         }
       }
     }
