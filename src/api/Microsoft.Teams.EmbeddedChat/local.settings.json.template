@@ -8,7 +8,6 @@
   "AppSettings": {
     "StorageConnectionString": "",
     "AcsEndpoint": "",
-    "AcsAccessKey": "",
     "AzureTableName": "Entities",
     "TenantId": ""
   }

@@ -5,7 +5,6 @@ namespace Microsoft.Teams.EmbeddedChat
     {
         public string StorageConnectionString { get; set; }
         public string AcsEndpoint { get; set; }
-        public string AcsAccessKey { get; set; }
         public string AzureTableName { get; set; }
         public string TenantId { get; set; }
     }
