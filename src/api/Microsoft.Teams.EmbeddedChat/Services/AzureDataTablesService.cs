@@ -2,7 +2,6 @@
 using Azure.Data.Tables;
 using Azure.Data.Tables.Sas;
 using Azure.Identity;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Teams.EmbeddedChat.Models;
 using System;
 using System.Collections.Generic;
@@ -125,13 +124,14 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
         }
 
         /// <summary>
-        /// Get Entity by its partition key
+        /// Get Entity by its partition and row keys
         /// </summary>
         /// <param name="partitionKey"></param>
+        /// <param name="rowKey"></param>
         /// <returns></returns>
-        public IBaseTableEntity GetEntity(string partitionKey)
+        public IBaseTableEntity GetEntity(string partitionKey, string rowKey)
         {
-            var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey);
+            var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey && ent.RowKey == rowKey);
 
             return queryResultsLINQ.FirstOrDefault();
         }

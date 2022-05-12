@@ -1,7 +1,8 @@
 export type EntityState = {
   entityId: string;
-  id?: string;
+  userId: string;
   threadId?: string;
   acsUserId?: string;
   acsToken?: string;
+  tokenExpiresOn?: string;
 };

@@ -80,6 +80,66 @@ re-create on your local machine before you can run the project:
   `.env`, which you can clone from `.env.template` and then fill all required
   fields.
 
+## Authenticate in the development environment
+
+When creating a ACS Client in API we'll be using the `DefaultAzureCredential`. This credential is suitable for production and development environments. All you need is to create the Service Account Principal that will be used to authenticate to your Azure Communication Services.
+Here are the steps for how to do that:
+
+1. Make sure you have the latest version of Azure CLI and PowerShell installed.
+2. Open PowerShell console window.
+3. Run the following command:
+
+   ```shell
+    set export MSYS_NO_PATHCONV=1
+   ```
+
+4. Login to Azure CLI by running `az login` and signing in with an account that
+   has Owner permissions to the subscription.
+5. Create service principal with subscription level permissions by running:
+
+   ```shell
+     az ad sp create-for-rbac --name <Name of SPN> --role contributor --scopes <Your Subscription ID>
+   ```
+
+   For example:
+
+   ```shell
+   az ad sp create-for-rbac --name "msteams-embedchat-dg-svc" --role contributor --scopes /subscriptions/XXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXX
+   ```
+
+   This will return a JSON block that looks similar to this:
+
+   ```json
+   {
+     "appId": "",
+     "displayName": "",
+     "name": "",
+     "password": "",
+     "tenant": ""
+   }
+   ```
+
+6. Open Visual Studio and go to the `src/api/Microsoft.Teams.EmbeddedChat/Properties` folder.
+7. Create a new file and give it a name: `launchSettings.json`.
+8. Fill it with the following values you have obtained in the step #5:
+
+   ```JSON
+   {
+    "profiles": {
+      "Microsoft.Teams.EmbeddedChat": {
+        "commandName": "Project",
+        "environmentVariables": {
+          "AZURE_CLIENT_SECRET": "<password>",
+          "AZURE_CLIENT_ID": "<appId>",
+          "AZURE_TENANT_ID": "<tenant>"
+        }
+      }
+    }
+   }
+   ```
+
+9. Now, you can launch API project!
+
 ## Use of NPM Scripts in the project
 
 As much as we can we should always strive for automation. We can achieve some of

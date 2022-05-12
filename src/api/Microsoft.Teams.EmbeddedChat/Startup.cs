@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Teams.EmbeddedChat.Activities;
 using System;
 using Azure.Identity;
-using System.Reflection;
 
 [assembly: FunctionsStartup(typeof(Startup))]
 
@@ -51,7 +50,6 @@ namespace Microsoft.Teams.EmbeddedChat
                 builder.ConfigurationBuilder
                    .SetBasePath(Environment.CurrentDirectory)
                    .AddJsonFile("local.settings.json", true)
-                   .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
                    .AddEnvironmentVariables()
                    .Build();
             }

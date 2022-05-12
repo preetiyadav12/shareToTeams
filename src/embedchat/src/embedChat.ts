@@ -1,6 +1,6 @@
 import { ChatClient, ChatClientOptions, ChatMessage as CM, CreateChatThreadRequest } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
-import { AccessToken, EntityState } from "./models";
+import { AuthInfo, EntityState } from "./models";
 import { AuthUtil } from "./api/authUtil";
 import { AppSettings } from "./config/appSettings";
 import { EntityApi } from "./api/entityMapping";
@@ -22,15 +22,6 @@ export class EmbeddedChat {
     return msg;
   };
 
-  public async getEntityMapping(entityId: string, token: string): Promise<EntityState | undefined> {
-    const entityApi = new EntityApi(this.appSettings, token);
-    const response = await entityApi.getMapping({
-      entityId,
-      acsToken: token,
-    });
-    return response;
-  }
-
   public async renderEmbed(element: Element, entityId: string) {
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
@@ -41,8 +32,11 @@ export class EmbeddedChat {
       console.log("authResult cannot be null!");
       return;
     }
-    console.log(`Access Token: ${authResult.accessToken}`);
+
+    console.log(`User Id: ${authResult.uniqueId}`);
+    console.log(`Graph Token: ${authResult.accessToken}`);
     console.log(`Id Token: ${authResult.idToken}`);
+    console.log(`Token Expires On: ${authResult.expiresOn}`);
 
     console.log(`Trying to get Entity Mapping. Calling ${this.appSettings.apiBaseUrl}/getMapping`);
     const entityApi = new EntityApi(this.appSettings, authResult.accessToken);
@@ -50,16 +44,17 @@ export class EmbeddedChat {
     // try to get the mapping for this entity id
     const entityState: EntityState = (await entityApi.getMapping({
       entityId,
-      acsToken: authResult.accessToken,
+      userId: authResult.uniqueId,
     })) as EntityState;
 
     console.log(`Entity Id: ${entityState.entityId}`);
-    console.log(`ACS User Id: ${entityState.acsUserId}`);
     console.log(`Thread Id: ${entityState.threadId}`);
+    console.log(`ACS User Id: ${entityState.acsUserId}`);
+    console.log(`ACS Token: ${entityState.acsToken}`);
 
     // // initialize the ACS Client
     console.log("Initializing ACS Client...");
-    this.creds = new AzureCommunicationTokenCredential(authResult.accessToken);
+    this.creds = new AzureCommunicationTokenCredential(entityState.acsToken!);
     this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
 
     console.log("Successfully initialized ACS Chat Client!");
