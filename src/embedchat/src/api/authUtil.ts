@@ -1,12 +1,12 @@
-import { AccessToken } from "../models";
+import { AuthInfo } from "src/models";
 import { AppSettings } from "../config/appSettings";
 
 export class AuthUtil {
-  public static async acquireToken(element: Element, config: AppSettings): Promise<AccessToken | undefined> {
+  public static async acquireToken(element: Element, config: AppSettings): Promise<AuthInfo | undefined> {
     // first try silent auth
     return new Promise((resolve, reject) => {
-      this.acquireTokenSilent(element, config).then((token: AccessToken) => {
-        if (token) resolve(token);
+      this.acquireTokenSilent(element, config).then((authInfo: AuthInfo) => {
+        if (authInfo) resolve(authInfo);
         else {
           // requires an interactive login
           const btn = document.createElement("button");
@@ -43,7 +43,7 @@ export class AuthUtil {
     });
   }
 
-  private static async acquireTokenSilent(element: Element, config: AppSettings): Promise<AccessToken> {
+  private static async acquireTokenSilent(element: Element, config: AppSettings): Promise<AuthInfo> {
     return new Promise((resolve) => {
       const loginframe = document.createElement("iframe");
       loginframe.setAttribute(

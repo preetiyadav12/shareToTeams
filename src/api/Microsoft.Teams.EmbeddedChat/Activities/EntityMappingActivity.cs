@@ -3,8 +3,10 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Teams.EmbeddedChat.ACS;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Utils;
+using System;
 using System.Threading.Tasks;
 
 namespace Microsoft.Teams.EmbeddedChat.Activities
@@ -37,8 +39,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 // Construct a new "TableServiceClient using a connection string.
                 var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
-                // check if the entity mapping already exists
-                var entityState = tableService.GetEntity(requestData.EntityId);
+                // check if the entity-user mapping already exists
+                var entityState = tableService.GetEntity(requestData.EntityId, requestData.UserId);
 
                 return entityState;
             }
@@ -71,23 +73,27 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
 
             try
             {
-                // create ACS Communication Identity Client
-                var comClient = new CommunicationIdentityClient(_appConfiguration.AcsConnectionString);
+                // create ACS Communication Identity Client Service
+                var comClient = new CommServices(new Uri(_appConfiguration.AcsEndpoint), 
+                    new [] { CommunicationTokenScope.VoIP, CommunicationTokenScope.Chat });
 
-                // create new ACS user for this entity
-                var user = await comClient.CreateUserAsync();
+                // Create user Id and ACS token
+                var (userId, accessToken, expiresOn) = await comClient.CreateIdentityAndGetTokenAsync();
 
                 // populate Entity State with the ACS User info
                 var entityState = new EntityState()
                 {
                     PartitionKey = requestData.EntityId,
-                    RowKey = requestData.RowKey,
+                    RowKey = requestData.UserId,
                     EntityId = requestData.EntityId,
-                    AcsUserId = user.Value.Id,
+                    UserId = requestData.UserId,
                     ThreadId = requestData.ThreadId,
+                    AcsUserId = userId,
+                    AcsToken = accessToken,
+                    TokenExpiresOn = expiresOn.ToString("F"),
                 };
 
-                if (string.IsNullOrEmpty(entityState.PartitionKey) || string.IsNullOrEmpty(entityState.RowKey) || string.IsNullOrEmpty(entityState.EntityId))
+                if (string.IsNullOrEmpty(entityState.PartitionKey) || string.IsNullOrEmpty(entityState.RowKey))
                     throw new System.Exception("One of the entity state primary keys is emtpy!");
 
                 // Construct a new "TableServiceClient using a connection string.

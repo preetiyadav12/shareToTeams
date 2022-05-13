@@ -217,11 +217,13 @@ msbuild.log
 msbuild.err
 msbuild.wrn
 
-# Visual Studio 2015
+# Visual Studio
 .vs/
-spikes/EntityMapping/appsettings.json
+
 ## Users settings
 **/appsettings.[Dd]evelopment.json
 **/appsettings.[Tt]est.json
 **/appsettings.[Pp]roduction.json
 **/appsettings.json
+**/launchSettings.json
+

@@ -1,8 +1,14 @@
 {
-    "IsEncrypted": false,
+  "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet"
   },
-  "Host": {"CORS": "*"}
+  "Host": { "CORS": "*" },
+  "AppSettings": {
+    "StorageConnectionString": "",
+    "AcsEndpoint": "",
+    "AzureTableName": "Entities",
+    "TenantId": ""
+  }
 }
