@@ -4,8 +4,14 @@ namespace Microsoft.Teams.EmbeddedChat
     public static class Constants
     {
         public const string Orchestration = "EntityOrchestration";
+
         public const string GetEntityStateActivity = "GetEntityState";
+        public const string GetEntityStateRoute = "entity/mapping";
+
         public const string CreateEntityStateActivity = "CreateEntityMapping";
+
+        public const string UpdateEntityStateActivity = "UpdateEntityState";
+        public const string UpdateEntityStateRoute = "entity/mapping/update";
 
         public const string EntityMappingAPIHttpPost = "EntityMappingAPI";
         public const string EntityUpdateAPIHttpPost = "EntityUpdateAPI";

@@ -6,6 +6,7 @@ namespace Microsoft.Teams.EmbeddedChat.Models
 {
     public class IBaseTableEntity: ITableEntity
     {
+        public string Id { get; set; }
         public string PartitionKey { get; set; }
         public string RowKey { get; set; }
         public DateTimeOffset? Timestamp { get; set; }

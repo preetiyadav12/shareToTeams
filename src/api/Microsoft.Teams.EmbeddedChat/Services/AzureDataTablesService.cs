@@ -129,9 +129,22 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
         /// <param name="partitionKey"></param>
         /// <param name="rowKey"></param>
         /// <returns></returns>
-        public IBaseTableEntity GetEntity(string partitionKey, string rowKey)
+        public IEnumerable<IBaseTableEntity> GetEntity(string partitionKey)
         {
-            var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey && ent.RowKey == rowKey);
+            var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey);
+
+            return queryResultsLINQ?.ToList();
+        }
+
+        /// <summary>
+        /// Try to get the entity state for the giving partition and row keys
+        /// </summary>
+        /// <param name="partitionKey"></param>
+        /// <param name="rowKey"></param>
+        /// <returns></returns>
+        public IBaseTableEntity GetEntityMapping(string partitionKey, string rowKey)
+        {
+            var queryResultsLINQ = _tableClient.Query<EntityState>(filter: ent => ent.PartitionKey == partitionKey && ent.RowKey == rowKey);
 
             return queryResultsLINQ.FirstOrDefault();
         }

@@ -23,12 +23,15 @@ namespace Microsoft.Teams.EmbeddedChat
         }
 
         public async Task<IActionResult> ProcessFlow(
+            ApiOperation operation,
             EntityState requestData,
             HttpRequestMessage request,
             IDurableOrchestrationClient client)
         {
-            requestData.RowKey = await client.StartNewAsync(Constants.Orchestration, requestData);
-            _log.LogInformation($"Started orchestration Instance Id: '{requestData.RowKey}' for the Entity ID: '{requestData.EntityId}'.");
+            _log.LogInformation($"Started orchestration Instance Id: '{requestData.Id}' for the Api Operation Id: {operation} and Entity ID: '{requestData.EntityId}'.");
+            var orchestrationRequest = new OrchestrationRequest { Operation = operation, Request = requestData };
+
+            requestData.Id = await client.StartNewAsync(Constants.Orchestration, orchestrationRequest);
 
             TimeSpan timeout = TimeSpan.FromSeconds(Constants.Timeout);
             TimeSpan retryInterval = TimeSpan.FromSeconds(Constants.RetryInterval);
@@ -36,18 +39,18 @@ namespace Microsoft.Teams.EmbeddedChat
             // Execute the orchestration and wait for the completion
             await client.WaitForCompletionOrCreateCheckStatusResponseAsync(
                 request,
-                requestData.RowKey,
+                requestData.Id,
                 timeout,
                 retryInterval,
                 true);
 
             // Retrieve the status of the completed orchestration
-            var data = await client.GetStatusAsync(requestData.RowKey);
+            var data = await client.GetStatusAsync(requestData.Id);
 
             // timeout
             if (data.RuntimeStatus != OrchestrationRuntimeStatus.Completed)
             {
-                await client.TerminateAsync(requestData.RowKey, "Timeout. Something took too long");
+                await client.TerminateAsync(requestData.Id, "Timeout. Something took too long");
                 return new ContentResult()
                 {
                     Content = "{ error: \"Timeout. Something took too long\" }",
