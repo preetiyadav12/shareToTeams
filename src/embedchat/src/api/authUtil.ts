@@ -1,3 +1,4 @@
+import { ButtonPage } from "../components/buttonPage";
 import { AuthInfo } from "src/models";
 import { AppSettings } from "../config/appSettings";
 
@@ -9,9 +10,7 @@ export class AuthUtil {
         if (authInfo) resolve(authInfo);
         else {
           // requires an interactive login
-          const btn = document.createElement("button");
-          btn.innerText = "Sign-in";
-          btn.addEventListener("click", () => {
+          const btn = new ButtonPage("Sign-in to Microsoft Teams", () => {
             // launch popup
             let popupRef = window.open(
               `https://${config.hostDomain}/auth.html?mode=interactive&client_id=${config.clientId}&host_uri=${config.hostDomain}&tenant=${config.tenant}`,
@@ -35,8 +34,6 @@ export class AuthUtil {
               }
             }, 500);
           });
-
-          // add button to the DOM
           element.append(btn);
         }
       });
