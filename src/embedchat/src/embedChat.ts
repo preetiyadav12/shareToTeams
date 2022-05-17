@@ -89,6 +89,7 @@ export class EmbeddedChat {
           );
         }
       });
+      element.append(btn);
     } else {
       // load the existing thread messages
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
