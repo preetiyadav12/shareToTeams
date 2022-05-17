@@ -76,9 +76,9 @@
     "liveServer.settings.CustomBrowser": "chrome",
     "liveServer.settings.https": {
       "enable": true,
-      "cert": "/Users/dannyg/https/localhost.pem",
-      "key": "/Users/dannyg/https/localhost.key",
-      "passphrase": "d20250318g"
+      "cert": "/Users/<user>/https/localhost.pem",
+      "key": "/Users/<user>/https/localhost.key",
+      "passphrase": "<your passphrase>"
     }
   },
   "launch": {
