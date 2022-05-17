@@ -5,6 +5,7 @@ import { AuthUtil } from "./api/authUtil";
 import { AppSettings } from "./config/appSettings";
 import { EntityApi } from "./api/entityMapping";
 import { PhotoUtil } from "./api/photoUtil";
+import { ButtonPage } from "./components/buttonPage";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
@@ -14,6 +15,13 @@ export class EmbeddedChat {
 
   constructor(config: AppSettings) {
     this.appSettings = config;
+
+    // add link to css
+    // TODO: we might need to check if it already exists for SPAs
+    const linkElement = document.createElement("link");
+    linkElement.setAttribute("rel", "stylesheet");
+    linkElement.setAttribute("type", "text/css");
+    linkElement.setAttribute("href", `https://${config.hostDomain}/embedChat.css`);
   }
 
   public PrintName = (name: string): string => {
@@ -66,16 +74,22 @@ export class EmbeddedChat {
     // determine if this is a new thread or not
     const messages: CM[] = [];
     if (!entityState.threadId || entityState.threadId === "") {
-      // this is a new thread...start it
-      console.log("Starting a new Chat thread...");
-      const chatRequest: CreateChatThreadRequest = {
-        topic: entityId,
-      };
-      const chatThreadResult = await this.chatClient.createChatThread(chatRequest);
+      // TODO: check autoStart value
+      const btn = new ButtonPage("Start Teams Chat", async () => {
+        // this is a new thread...start it
+        console.log("Starting a new Chat thread...");
+        const chatRequest: CreateChatThreadRequest = {
+          topic: entityId,
+        };
+        if (this.chatClient) {
+          const chatThreadResult = await this.chatClient.createChatThread(chatRequest);
 
-      console.log(
-        `New Chat Thread was created for the topic: ${chatThreadResult.chatThread?.topic} and chat Id: ${chatThreadResult.chatThread?.id}`,
-      );
+          console.log(
+            `New Chat Thread was created for the topic: ${chatThreadResult.chatThread?.topic} and chat Id: ${chatThreadResult.chatThread?.id}`,
+          );
+        }
+      });
+      element.append(btn);
     } else {
       // load the existing thread messages
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
