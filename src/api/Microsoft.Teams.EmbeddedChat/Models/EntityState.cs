@@ -5,7 +5,7 @@
 namespace Microsoft.Teams.EmbeddedChat.Models
 {
     /// <summary>
-    /// Class for InitResponse.
+    /// Class for EntityState.
     /// </summary>
     public class EntityState : IBaseTableEntity
     {

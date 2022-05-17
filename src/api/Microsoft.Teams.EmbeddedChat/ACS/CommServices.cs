@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Azure.Communication;
 using Azure.Communication.Identity;
 using Azure.Core;
 using Azure.Identity;
@@ -45,6 +46,18 @@ namespace Microsoft.Teams.EmbeddedChat.ACS
             Console.WriteLine($"Token: {token}");
 
             return (identity.Id, token, expiresOn);
+        }
+
+        /// <summary>
+        /// Refresh token
+        /// </summary>
+        /// <param name="acsUserId"></param>
+        /// <returns></returns>
+        public async Task<AccessToken> RefreshAccessToken(string acsUserId)
+        {
+            var identityToRefresh = new CommunicationUserIdentifier(acsUserId);
+            var tokenResponse = await this.identityClient.GetTokenAsync(identityToRefresh, scopes: this.communicationTokenScopes);
+            return tokenResponse.Value;
         }
     }
 }
