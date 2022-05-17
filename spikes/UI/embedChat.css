@@ -1,0 +1,162 @@
+.DoNotUse {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    background: #444444;
+  }
+  
+  .DoNotUse-embed {
+    width: 400px;
+    height: 500px;
+    position: absolute;
+    left: 50%;
+    margin-left: -200px;
+    top: 20px;
+  }
+  
+  .teams-embed-container {
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+    height: 100%; 
+    background: #f3f3f3; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Web", sans-serif;
+  }
+  
+  
+  
+  .teams-embed-header {
+    display: flex; 
+    height: 40px;
+    border-bottom: 1px solid #e8e8e8;
+  }
+  
+  .teams-embed-header-text {
+    flex-grow: 1;
+  }
+  
+  .teams-embed-header-text h2 {
+    margin: 5px;
+  }
+  
+  .teams-embed-header-participants {
+    padding: 1px;
+  }
+  
+  .teams-embed-header-participants-button {
+      background: 0;
+      border: 0;
+      display: inline-flex;
+      color: #424242;
+  }
+  
+  .teams-embed-header-participants-button g {
+      fill: #424242;
+  }
+  
+  .teams-embed-header-participants-button:hover {
+    color: #574fbd;
+  }
+  
+  .teams-embed-header-participants-button:hover g {
+    fill: #574fbd;
+  }
+  
+  .teams-embed-header-participants-button .icons-filled {
+    display:none;
+  }
+  
+  .teams-embed-header-participants-button:hover .icons-filled {
+    display:block;
+  }
+  
+  .teams-embed-header-participants-icon {
+    display: inline-block;
+    vertical-align: middle;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .teams-embed-header-participant-icon svg {
+    height: 3.2rem;
+    width: 3.2rem;
+  }
+  
+  .teams-embed-header-participants-count {
+    padding-top: 8px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  .teams-embed-chat {
+    flex: 1;
+    overflow: auto;
+  }
+  
+  .teams-embed-footer {
+    height: 60px;
+    padding: 5px;
+  }
+  
+  .teams-embed-footer-input {
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    height: 38px;
+  }
+  
+  .teams-embed-footer-actions {
+    display: flex;
+  }
+  
+  .teams-embed-footer-actions-left {
+  }
+  .teams-embed-footer-actions-filler {
+    flex-grow: 1;
+  }
+  .teams-embed-footer-actions-right{
+  }
+  
+  .teams-embed-participant-container {
+    width: 260px;
+    height: 280px;
+    background: #fff;
+    border-radius: 5px;
+    position: absolute;
+    right: 0px;
+    top: 41px;
+    box-shadow: 0 0 2px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.14);
+    display: flex;
+    flex-direction: column; 
+  }
+  
+  .teams-embed-participant-list {
+    flex-grow: 1;
+    overflow: auto;
+  }
+  
+  .teams-embed-participant-list-footer {
+    height: 40px;
+    border-top: 1px solid #f1f0ef;
+  }
+  
+  .teams-embed-people-item {
+    display: flex;
+    padding: 10px;
+  }
+  
+  .teams-embed-people-item:hover {
+    background: #f1f0ef;
+  }
+  
+  .teams-embed-people-item-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+  }
+  
+  .teams-embed-people-item-name {
+    padding: 8px;
+  }
