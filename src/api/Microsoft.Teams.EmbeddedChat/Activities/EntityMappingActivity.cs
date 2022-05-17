@@ -34,6 +34,30 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
 
             log.LogInformation($"Activity {Constants.GetEntityStateActivity} has started.");
 
+            var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
+            var clientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET");
+            var tenant = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
+
+            log.LogInformation($"Client Id: {clientId}");
+            log.LogInformation($"Client Secret: {clientSecret}");
+            log.LogInformation($"Tenant Id: {tenant}");
+
+            if (String.IsNullOrEmpty(clientId))
+            {
+                log.LogError("Missing AZURE_CLIENT_ID environment variable");
+                throw new ArgumentException("Missing AZURE_CLIENT_ID environment variable");
+            }
+            if (String.IsNullOrEmpty(clientSecret))
+            {
+                log.LogError("Missing AZURE_CLIENT_SECRET environment variable");
+                throw new ArgumentException("Missing AZURE_CLIENT_SECRET environment variable");
+            }
+            if (String.IsNullOrEmpty(tenant))
+            {
+                log.LogError("Missing AZURE_TENANT_ID environment variable");
+                throw new ArgumentException("Missing AZURE_TENANT_ID environment variable");
+            }
+
             try
             {
                 // Construct a new "TableServiceClient using a connection string.

@@ -21,9 +21,6 @@
       "path": "samples/react"
     },
     {
-      "path": "terraform"
-    },
-    {
       "path": "deploy"
     },
     {
@@ -71,7 +68,18 @@
     "[shellscript]": {
       "editor.defaultFormatter": "shakram02.bash-beautify"
     },
-    "liveServer.settings.multiRootWorkspaceName": "Samples/NodeJs"
+    "liveServer.settings.multiRootWorkspaceName": "Samples/NodeJs",
+    "debug.internalConsoleOptions": "neverOpen",
+    "liveServer.settings.ChromeDebuggingAttachment": false,
+    "liveServer.settings.port": 5501,
+    "liveServer.settings.root": "/",
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.https": {
+      "enable": true,
+      "cert": "/Users/dannyg/https/localhost.pem",
+      "key": "/Users/dannyg/https/localhost.key",
+      "passphrase": "d20250318g"
+    }
   },
   "launch": {
     "configurations": [],
