@@ -7,6 +7,7 @@ using Microsoft.Teams.EmbeddedChat.ACS;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Utils;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Microsoft.Teams.EmbeddedChat.Activities
@@ -27,10 +28,10 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <param name="log"></param>
         /// <returns></returns>
         [FunctionName(Constants.GetEntityStateActivity)]
-        public EntityState GetEntityStateAsync([ActivityTrigger] IDurableActivityContext context, ILogger log)
+        public IEnumerable<EntityState> GetEntityStateAsync([ActivityTrigger] IDurableActivityContext context, ILogger log)
         {
             // retrieves the entity state from the orchestration
-            var requestData = context.GetInput<EntityState>();
+            var requestData = context.GetInput<ChatInfoRequest>();
 
             log.LogInformation($"Activity {Constants.GetEntityStateActivity} has started.");
 
@@ -39,7 +40,6 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             var tenant = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
 
             log.LogInformation($"Client Id: {clientId}");
-            log.LogInformation($"Client Secret: {clientSecret}");
             log.LogInformation($"Tenant Id: {tenant}");
 
             if (String.IsNullOrEmpty(clientId))
@@ -63,10 +63,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 // Construct a new "TableServiceClient using a connection string.
                 var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
-                // check if the entity-user mapping already exists
-                var entityState = (EntityState) tableService.GetEntityMapping(requestData.EntityId, requestData.UserId);
-
-                return entityState;
+                // return all the entities for the particular Entity Id
+                return (IEnumerable<EntityState>) tableService.GetEntities(requestData.EntityId);
             }
             catch (System.Exception e)
             {
@@ -108,13 +106,14 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 var entityState = new EntityState()
                 {
                     PartitionKey = requestData.EntityId,
-                    RowKey = requestData.UserId,
+                    RowKey = requestData.OwnerId,
                     EntityId = requestData.EntityId,
-                    UserId = requestData.UserId,
+                    OwnerId = requestData.OwnerId,
                     ThreadId = requestData.ThreadId,
                     AcsUserId = userId,
                     AcsToken = accessToken,
                     TokenExpiresOn = expiresOn.ToString("F"),
+                    Participants = requestData.Participants,
                 };
 
                 if (string.IsNullOrEmpty(entityState.PartitionKey) || string.IsNullOrEmpty(entityState.RowKey))
@@ -156,7 +155,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
                 // Retrieve the existing state data from the data store
-                var entityState = (EntityState)tableService.GetEntityMapping(requestData.EntityId, requestData.UserId);
+                var entityState = (EntityState)tableService.GetEntityMapping(requestData.EntityId, requestData.OwnerId);
 
                 // create ACS Communication Identity Client Service
                 var comClient = new CommServices(new Uri(_appConfiguration.AcsEndpoint),

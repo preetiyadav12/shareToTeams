@@ -10,6 +10,6 @@ namespace Microsoft.Teams.EmbeddedChat.Models
     public class OrchestrationRequest
     {
         public ApiOperation Operation { get; set; }
-        public EntityState Request { get; set; }
+        public ChatInfoRequest Request { get; set; }
     }
 }

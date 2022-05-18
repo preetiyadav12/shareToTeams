@@ -129,7 +129,7 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
         /// <param name="partitionKey"></param>
         /// <param name="rowKey"></param>
         /// <returns></returns>
-        public IEnumerable<IBaseTableEntity> GetEntity(string partitionKey)
+        public IEnumerable<IBaseTableEntity> GetEntities(string partitionKey)
         {
             var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey);
 

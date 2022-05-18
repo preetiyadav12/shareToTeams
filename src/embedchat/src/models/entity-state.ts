@@ -1,8 +1,12 @@
-export type EntityState = {
+import { BaseModel } from "./base-model";
+import { Participant } from "./participant";
+
+export interface EntityState extends BaseModel {
   entityId: string;
-  userId: string;
-  threadId?: string;
-  acsUserId?: string;
-  acsToken?: string;
-  tokenExpiresOn?: string;
-};
+  ownerId: string;
+  threadId: string;
+  acsUserId: string;
+  acsToken: string;
+  tokenExpiresOn: string;
+  participants: Participant[];
+}

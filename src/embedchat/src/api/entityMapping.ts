@@ -1,3 +1,4 @@
+import { ChatInfoRequest } from "src/models/chat-info-request";
 import { AppSettings } from "../config/appSettings";
 import { EntityState } from "../models/entity-state";
 
@@ -12,8 +13,8 @@ export class EntityApi {
     console.log(`API Base Url: ${this.config.apiBaseUrl}`);
   }
 
-  public getMapping = async (entityRequest: EntityState): Promise<EntityState | undefined> => {
-    if (!entityRequest) {
+  public getMapping = async (chatInfoRequest: ChatInfoRequest): Promise<EntityState | undefined> => {
+    if (!chatInfoRequest) {
       throw new Error("Entity Id cannot be emtpy!");
     }
 
@@ -23,7 +24,7 @@ export class EntityApi {
         Authorization: `Bearer ${this.idToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(entityRequest),
+      body: JSON.stringify(chatInfoRequest),
     };
 
     const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping`, requestOptions);

@@ -24,7 +24,7 @@ namespace Microsoft.Teams.EmbeddedChat
 
         public async Task<IActionResult> ProcessFlow(
             ApiOperation operation,
-            EntityState requestData,
+            ChatInfoRequest requestData,
             HttpRequestMessage request,
             IDurableOrchestrationClient client)
         {

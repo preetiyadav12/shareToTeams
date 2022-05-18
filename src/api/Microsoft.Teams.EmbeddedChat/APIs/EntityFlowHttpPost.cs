@@ -33,7 +33,7 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
         {
             log.LogInformation($"Started new {Constants.EntityMappingAPIHttpPost} flow.");
 
-            var requestData = await request.Content.ReadAsAsync<EntityState>();
+            var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
 
             return await _processing.ProcessFlow(ParseOperation(request), requestData, request, client);
@@ -54,7 +54,7 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
         {
             log.LogInformation($"Started new {Constants.EntityUpdateAPIHttpPost} flow.");
 
-            var requestData = await request.Content.ReadAsAsync<EntityState>();
+            var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
 
             return await _processing.ProcessFlow(ParseOperation(request), requestData, request, client);

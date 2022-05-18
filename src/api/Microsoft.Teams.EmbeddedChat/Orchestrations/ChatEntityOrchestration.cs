@@ -1,9 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using System.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.Teams.EmbeddedChat.Models;
+using System.Collections.Generic;
 
 namespace Microsoft.Teams.EmbeddedChat
 {
@@ -23,64 +25,71 @@ namespace Microsoft.Teams.EmbeddedChat
             // retrieves the request data
             var orchestrationRequest = context.GetInput<OrchestrationRequest>();
             orchestrationRequest.Request.Id = context.InstanceId;
+            var requestData = orchestrationRequest.Request;
 
             if (!context.IsReplaying)
             {
-                log.LogWarning($"Started Entity State Orchestration with Instance Id: {orchestrationRequest.Request.Id} for the entity id {orchestrationRequest.Request.EntityId}.");
+                log.LogWarning($"Started Entity State Orchestration with Instance Id: {requestData.Id} for the entity id {requestData.EntityId}.");
             }
 
             switch (orchestrationRequest.Operation)
             {
                 case ApiOperation.GetEntityState:
                     // Check if the mapping exists for this entity Id by invoking a separate Activity Function.
-                    var entityState = await context.CallActivityAsync<EntityState>(Constants.GetEntityStateActivity, orchestrationRequest.Request);
+                    var entities = await context.CallActivityAsync<IEnumerable<EntityState>>(Constants.GetEntityStateActivity, requestData);
 
                     if (!context.IsReplaying)
                     {
-                        log.LogWarning($"{Constants.GetEntityStateActivity} Activity completed for the entity id {orchestrationRequest.Request.EntityId}.");
+                        log.LogWarning($"{Constants.GetEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
                     }
 
-                    // If the entity state doesn't exist and if the ACS Token has not expired
-                    if (entityState == null)
+                    if (entities.Any())
                     {
-                        log.LogWarning($"Entity State for the entity id {orchestrationRequest.Request.EntityId} has not been found. Creating a new one...");
+                        // at least one entity mapping found
+                        // now we'll check if this user was the owner of one of the entities in the list
+                        var entityState = entities.FirstOrDefault(e => e.OwnerId == requestData.UserId);
+                        if (entityState != null) // This user is the owner of the entity! Return it!
+                        {
+                            // If the ACS Token has expired, we'll refresh it and then update the state
+                            if (DateTime.Parse(entityState.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
+                            {
+                                log.LogWarning("ACS Token has expired. Refreshing the token and returning the updated state...");
+
+                                // update the entity state with the refreshed token
+                                var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, requestData);
+                                if (updateStatus == false)
+                                {
+                                    log.LogError($"Failed to update the entity with Id: {requestData.EntityId}");
+                                    return null;
+                                }
+
+                                // update the entity state returning to the caller
+                                entityState = updatedState;
+
+                                if (!context.IsReplaying)
+                                {
+                                    log.LogWarning($"{Constants.UpdateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
+                                }
+                            }
+                            return entityState;
+                        }
+
+                        // No entity found for the particular user, let's check the participants list
+                    }
+                    // If the entity state doesn't exist and if the ACS Token has not expired
+                    else
+                    {
+                        log.LogWarning($"Entity State for the entity id {requestData.EntityId} has not been found. Creating a new one...");
 
                         // create a new entity state and save it in the durable storage
-                        entityState = await context.CallActivityAsync<EntityState>(Constants.CreateEntityStateActivity, orchestrationRequest.Request);
+                        var entityState = await context.CallActivityAsync<EntityState>(Constants.CreateEntityStateActivity, requestData);
 
                         if (!context.IsReplaying)
                         {
-                            log.LogWarning($"{Constants.CreateEntityStateActivity} Activity completed for the entity id {orchestrationRequest.Request.EntityId}.");
+                            log.LogWarning($"{Constants.CreateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
                         }
                     }
-                    // If the ACS Token has expired, we'll refresh it and then update the state
-                    else if (DateTime.Parse(entityState.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
-                    {
-                        log.LogWarning("ACS Token has expired. Refreshing the token and returning the updated state...");
-
-                        // update the entity state with the refreshed token
-                        var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, orchestrationRequest.Request);
-                        if (updateStatus == false)
-                        {
-                            log.LogError($"Failed to update the entity with Id: {orchestrationRequest.Request.EntityId}");
-                            return null;
-                        }
-
-                        // update the entity state returning to the caller
-                        entityState = updatedState;
-
-                        if (!context.IsReplaying)
-                        {
-                            log.LogWarning($"{Constants.UpdateEntityStateActivity} Activity completed for the entity id {orchestrationRequest.Request.EntityId}.");
-                        }
-                    }
-
-                    if (entityState == null)
-                    {
-                        log.LogError("Failed to get/create Entity State. Something went wrong.");
-                    }
-
-                    return entityState;
+                    break;
 
                 case ApiOperation.UpdateEntityState:
                     // update the entity state

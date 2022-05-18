@@ -1,17 +1,20 @@
-import { ChatClient, ChatClientOptions, ChatMessage as CM, CreateChatThreadRequest } from "@azure/communication-chat";
+import { ChatClient, ChatMessage as CM, CreateChatThreadRequest } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
+import { v4 as uuidv4 } from "uuid";
 import { AuthInfo, EntityState } from "./models";
 import { AuthUtil } from "./api/authUtil";
 import { AppSettings } from "./config/appSettings";
 import { EntityApi } from "./api/entityMapping";
 import { PhotoUtil } from "./api/photoUtil";
 import { ButtonPage } from "./components/buttonPage";
+import { ChatInfoRequest } from "./models/chat-info-request";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
   private creds?: AzureCommunicationTokenCredential;
   private chatClient?: ChatClient;
   private profilePics: Record<string, string> = {};
+  private chatTopic = "Chat Topic Name";
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -42,6 +45,7 @@ export class EmbeddedChat {
     }
 
     console.log(`User Id: ${authResult.uniqueId}`);
+    console.log(`User email: ${authResult.account.username}`);
     console.log(`Graph Token: ${authResult.accessToken}`);
     console.log(`Id Token: ${authResult.idToken}`);
     console.log(`Token Expires On: ${authResult.expiresOn}`);
@@ -49,11 +53,17 @@ export class EmbeddedChat {
     console.log(`Trying to get Entity Mapping. Calling ${this.appSettings.apiBaseUrl}/getMapping`);
     const entityApi = new EntityApi(this.appSettings, authResult.accessToken);
 
-    // try to get the mapping for this entity id
-    const entityState: EntityState = (await entityApi.getMapping({
+    // create the Entity Request
+    const chatRequest: ChatInfoRequest = {
       entityId,
       userId: authResult.uniqueId,
-    })) as EntityState;
+      topic: this.chatTopic,
+      participants: [],
+      correlationId: uuidv4(),
+    };
+
+    // try to get the mapping for this entity id
+    const entityState: EntityState = (await entityApi.getMapping(chatRequest))!;
 
     console.log(`Entity Id: ${entityState.entityId}`);
     console.log(`Thread Id: ${entityState.threadId}`);
