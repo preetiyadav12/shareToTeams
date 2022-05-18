@@ -106,9 +106,9 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 var entityState = new EntityState()
                 {
                     PartitionKey = requestData.EntityId,
-                    RowKey = requestData.OwnerId,
+                    RowKey = requestData.Owner,
                     EntityId = requestData.EntityId,
-                    OwnerId = requestData.OwnerId,
+                    Owner = requestData.Owner,
                     ThreadId = requestData.ThreadId,
                     AcsUserId = userId,
                     AcsToken = accessToken,
@@ -155,7 +155,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
                 // Retrieve the existing state data from the data store
-                var entityState = (EntityState)tableService.GetEntityMapping(requestData.EntityId, requestData.OwnerId);
+                var entityState = (EntityState)tableService.GetEntityMapping(requestData.EntityId, requestData.Owner);
 
                 // create ACS Communication Identity Client Service
                 var comClient = new CommServices(new Uri(_appConfiguration.AcsEndpoint),

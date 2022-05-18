@@ -51,12 +51,13 @@ export class EmbeddedChat {
     console.log(`Token Expires On: ${authResult.expiresOn}`);
 
     console.log(`Trying to get Entity Mapping. Calling ${this.appSettings.apiBaseUrl}/getMapping`);
-    const entityApi = new EntityApi(this.appSettings, authResult.accessToken);
+    const entityApi = new EntityApi(this.appSettings, authResult.idToken);
 
     // create the Entity Request
     const chatRequest: ChatInfoRequest = {
       entityId,
-      userId: authResult.uniqueId,
+      userName: authResult.account.username,
+      accessToken: authResult.accessToken,
       topic: this.chatTopic,
       participants: [],
       correlationId: uuidv4(),

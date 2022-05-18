@@ -5,7 +5,7 @@ namespace Microsoft.Teams.EmbeddedChat.Models
 	{
         public string Id { get; set; }
         public string EntityId { get; set; }
-        public string UserId { get; set; }
+        public string Username { get; set; }
         public string Topic { get; set; }
         public Participant[] Participants { get; set; }
         public string CorrelationId { get; set; }

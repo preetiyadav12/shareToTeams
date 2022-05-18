@@ -47,7 +47,7 @@ namespace Microsoft.Teams.EmbeddedChat
                     {
                         // at least one entity mapping found
                         // now we'll check if this user was the owner of one of the entities in the list
-                        var entityState = entities.FirstOrDefault(e => e.OwnerId == requestData.UserId);
+                        var entityState = entities.FirstOrDefault(e => e.Owner == requestData.Username);
                         if (entityState != null) // This user is the owner of the entity! Return it!
                         {
                             // If the ACS Token has expired, we'll refresh it and then update the state

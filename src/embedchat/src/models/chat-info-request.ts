@@ -3,7 +3,8 @@ import { Participant } from "./participant";
 
 export interface ChatInfoRequest extends BaseModel {
   entityId: string;
-  userId: string;
+  userName: string;
+  accessToken: string;
   topic: string;
   participants?: Participant[];
 }
