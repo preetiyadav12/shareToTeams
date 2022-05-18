@@ -22,6 +22,8 @@ namespace Microsoft.Teams.EmbeddedChat
 
             builder.Services.AddLogging();
             builder.Services.AddScoped<EntityMappingActivity>();
+            builder.Services.AddScoped<UpdateParticipantsActivity>();
+            builder.Services.AddScoped<CreateOnlineMeetingActivity>();
             builder.Services.AddScoped<Processing>();
         }
 
