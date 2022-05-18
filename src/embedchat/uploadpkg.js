@@ -58,6 +58,12 @@ async function main() {
           blobContentType: "text/javascript",
         },
       };
+    } else if (blobName.includes("css")) {
+      options = {
+        blobHTTPHeaders: {
+          blobContentType: "text/css",
+        },
+      };
     }
 
     console.log(`Uploading ${fileName}...`);
