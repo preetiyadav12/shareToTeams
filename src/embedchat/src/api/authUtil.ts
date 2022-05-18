@@ -1,17 +1,20 @@
 import { ButtonPage } from "../components/buttonPage";
 import { AuthInfo } from "src/models";
 import { AppSettings } from "../config/appSettings";
+import { Waiting } from "src/components/waiting";
 
 export class AuthUtil {
-  public static async acquireToken(element: Element, config: AppSettings): Promise<AuthInfo | undefined> {
+  public static async acquireToken(element: Element, config: AppSettings, waiting: Waiting): Promise<AuthInfo | undefined> {
     // first try silent auth
     return new Promise((resolve, reject) => {
       this.acquireTokenSilent(element, config).then((authInfo: AuthInfo) => {
         if (authInfo) resolve(authInfo);
         else {
           // requires an interactive login
+          waiting.hide();
           const btn = new ButtonPage("Sign-in to Microsoft Teams", () => {
             // launch popup
+            waiting.show();
             let popupRef = window.open(
               `https://${config.hostDomain}/auth.html?mode=interactive&client_id=${config.clientId}&host_uri=${config.hostDomain}&tenant=${config.tenant}`,
               "Teams Embed",
