@@ -595,12 +595,11 @@
     background: rgb(255, 255, 255);
     width: 100%;
     padding: 10px 16px 6px 16px;
-    outline-style: none;
     border-width: 0px 0px 0.1429rem 0px;
     border-radius: 0.2143rem 0.2143rem 0.1429rem 0.1429rem;
     border-style: solid;
     border-color: transparent;
-    overflow: visible;
+    box-sizing: border-box;
   }
   
   .teams-embed-footer-input:focus {
