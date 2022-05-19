@@ -611,6 +611,21 @@
   margin: 0 10px;
 }
 
+.teams-embed-input-mention-container {
+  background: #fff; 
+  position: absolute; 
+  display: flex; 
+  height: 200px; 
+  flex-direction: column; 
+  width: 300px; 
+  margin-top: -205px;
+  box-shadow: 0 0 2px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.14);
+  border-radius: 5px;
+  left: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .teams-embed-footer-input {
   background: rgb(255, 255, 255);
   width: 100%;
