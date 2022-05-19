@@ -76,10 +76,11 @@ export class EmbeddedChat {
     if (!entityState) {
       alert(`No entity mapping found for this entity: ${entityId}`);
     }
-    if (!entityState.isSuccess) {
+    if (entityState && !entityState.isSuccess) {
       alert(
         `There is at least one other chat for this entity is in progress. Please contact one of the owners of the existing chats: ${entityState.owner}`,
       );
+      return;
     }
 
     console.log(`Entity Id: ${entityState.entityId}`);
