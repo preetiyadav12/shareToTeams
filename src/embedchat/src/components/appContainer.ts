@@ -95,57 +95,61 @@ export class AppContainer extends HTMLElement {
         this.mentionResults = [];
     };
 
-    atMention = (evt: KeyboardEvent) => {
+    populateMentionContainer = (results: Person[]) => {
         const mentionContainer = (<HTMLElement>document.querySelector(".teams-embed-input-mention-container"));
+        mentionContainer.innerHTML = "";
+        this.mentionResults = [];
+        results.forEach((person: Person, i: number) => {                
+            this.mentionResults.push(person);
+            const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
+            mentionContainer.appendChild(peopleItem);
+        });
 
-        // close dialog if hit escape
+        mentionContainer.style.display = "block";
+    }
+
+    clearMentionContainer = () => {
+        this.mentionResults = [];
+        (<HTMLElement>document.querySelector(".teams-embed-input-mention-container")).style.display = "none";
+    }
+
+    atMention = (evt: KeyboardEvent) => {
+        // close mention results window if hit escape
         if (evt.key == "Escape") {
-            // close the mention results window
-            this.mentionResults = [];
-            mentionContainer.style.display = "none";
+            this.clearMentionContainer();
             return;
         } 
     
         const sel: any = window.getSelection();
         // if not input return
-        if (sel.anchorNode.nodeValue == null) return;
-        
-        const lastCharacter = sel.anchorNode.nodeValue[sel.focusOffset - 1];
-        if (lastCharacter === '@') {
-            this.mentionResults = [];
-            this.personList.forEach((person:Person, i:number) => {                
-                this.mentionResults.push(person);
-                const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
-                mentionContainer.appendChild(peopleItem);
-            });
-
-            mentionContainer.style.display = "block";
-        }
-
-        const inputToFocus = sel.anchorNode.nodeValue.substring(0, sel.focusOffset);
-        const atIndex = inputToFocus.lastIndexOf("@") + 1;
-        if (atIndex == 0) {
-            mentionContainer.style.display = "none";
+        if (sel.anchorNode.nodeValue == null) {
+            this.clearMentionContainer();
             return;
         }
 
-        this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trim().replaceAll(" ", "");
-        mentionContainer.style.display = "block";
+        // if the last character is '@', load the full participant list
+        if (sel.anchorNode.nodeValue[sel.focusOffset - 1] === '@') {
+            this.populateMentionContainer(this.personList);
+        } else {
+            // get the text from the start of the node up to the cursor focus
+            const inputToFocus = sel.anchorNode.nodeValue.substring(0, sel.focusOffset);
+            // get the last index of '@', there could be multiple @
+            const atIndex = inputToFocus.lastIndexOf("@") + 1;
+            if (atIndex == 0) {
+                this.clearMentionContainer();
+                return;
+            }
 
-        // filter
-        this.mentionResults = [];
-        mentionContainer.innerHTML = "";
-        const results = this.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
-        if (results.length == 0) {
-            mentionContainer.style.display = "none";
-            return;
+            this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trim().replaceAll(" ", "");
+            
+            // filter
+            const results = this.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
+            if (results.length == 0) {
+                this.clearMentionContainer();
+                return;
+            }
+            this.populateMentionContainer(results);
         }
-
-        results.forEach((person:Person, i:number) => {                
-            this.mentionResults.push(person);
-            const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
-            mentionContainer.appendChild(peopleItem);
-        });
     }
 
     render = () => {
