@@ -1,3 +1,4 @@
+import { PhotoUtil } from "../api/photoUtil";
 import { AuthInfo } from "src/models";
 import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
@@ -57,10 +58,12 @@ template.innerHTML = `
 export class AppContainer extends HTMLElement {
     private chatTitle:string;
     private authInfo:AuthInfo;
+    private photoUtil:PhotoUtil;
     constructor(chatTitle: string, authInfo:AuthInfo)  {
         super();
         this.chatTitle = chatTitle;
         this.authInfo = authInfo;
+        this.photoUtil = new PhotoUtil();
         this.render();
     }
 
@@ -69,6 +72,10 @@ export class AppContainer extends HTMLElement {
         (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
         (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
             // TODO: append the participant list here
+
+            // HACK
+            const addParticipantDialog:AddParticipantDialog = new AddParticipantDialog(this.authInfo, this.photoUtil);
+            (<HTMLElement>document.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
         });
         (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
             // TODO: send the message
@@ -77,12 +84,6 @@ export class AppContainer extends HTMLElement {
             // TODO: send the message if Enter pressed
             console.log(e.key);
         });
-
-
-        // HACK
-        const addParticipantDialog:AddParticipantDialog = new AddParticipantDialog(this.authInfo);
-        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
-        
 
         this.appendChild(dom);
     }

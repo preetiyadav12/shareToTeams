@@ -19,6 +19,11 @@ export class PeopleItem extends HTMLElement {
         }
         this.appendChild(dom);
     }
+
+    refresh = (person: Person) => {
+        (<HTMLImageElement>this.querySelector(".teams-embed-people-item-img")).src = person.photo;
+        (<HTMLElement>this.querySelector(".teams-embed-people-item-name")).innerText = person.displayName;
+    };
 }
 
 customElements.define("people-item", PeopleItem);

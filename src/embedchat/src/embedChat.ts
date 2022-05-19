@@ -7,6 +7,7 @@ import { EntityApi } from "./api/entityMapping";
 import { PhotoUtil } from "./api/photoUtil";
 import { ButtonPage } from "./components/buttonPage";
 import { Waiting } from "./components/waiting";
+import { AppContainer } from "./components/appContainer";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
@@ -83,6 +84,10 @@ export class EmbeddedChat {
     if (!entityState.threadId || entityState.threadId === "") {
       // TODO: check autoStart value
       this.waiting.hide();
+
+      const appContainer:AppContainer = new AppContainer("Hello World", authResult);
+      element.append(appContainer);
+      /*
       const btn = new ButtonPage("Start Teams Chat", async () => {
         // this is a new thread...start it
         console.log("Starting a new Chat thread...");
@@ -98,6 +103,7 @@ export class EmbeddedChat {
         }
       });
       element.append(btn);
+      */
     } else {
       // load the existing thread messages
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
@@ -108,7 +114,7 @@ export class EmbeddedChat {
         if (chatMessage.sender && !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const userId = (chatMessage.sender as any).microsoftTeamsUserId;
-          this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
+          //this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
         }
       }
 
