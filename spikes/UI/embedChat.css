@@ -147,7 +147,7 @@
 /* Start AddParticipantDialog */
 .teams-embed-add-participant-dialog {
   width: 400px;
-  height: 200px;
+  min-height: 200px;
   background: #fff;
   border-radius: 5px;
   position: absolute;
@@ -224,35 +224,32 @@
 /* Start PeoplePicker */
 .teams-embed-peoplepicker {
   background: #eeeeee;
-  height: 30px;
+  min-height: 30px;
   width: 100%;
   border-bottom: 2px solid transparent;
   border-radius: 2px;
   display: flex;
+  flex-wrap: wrap;
 }
 .teams-embed-peoplepicker:focus-within {
   border-bottom: 2px solid #574fbd;
 }
 
-.teams-embed-peoplepicker-selections {
-  padding: 6px;
-}
 .teams-embed-peoplepicker-input {
   flex-grow: 1;
 }
-.teams-embed-peoplepicker-input input {
-  width: 100%;
+.teams-embed-peoplepicker-input-ctrl {
+  outline: none; 
+  white-space: nowrap; 
+  padding: 6px; 
   font-size: 14px;
-  border: 0; 
-  background: transparent;
-  padding: 8px;
-}
-
-.teams-embed-peoplepicker-input input:focus {
-  outline: none;
 }
 
 /* Start PeoplePickerSelection */
+.teams-embed-peoplepicker-selection-outer {
+  padding: 6px;
+}
+
 .teams-embed-peoplepicker-selection {
   display: flex;
   height: 20px;
@@ -273,6 +270,7 @@
 .teams-embed-peoplepicker-selection-name {
   font-size: 14px;
   padding: 0px 4px;
+  white-space: nowrap;
 }
 
 .teams-embed-peoplepicker-selection-remove {

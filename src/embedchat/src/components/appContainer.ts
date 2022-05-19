@@ -1,3 +1,5 @@
+import { AuthInfo } from "src/models";
+import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
 
 const template = document.createElement("template");
@@ -54,9 +56,11 @@ template.innerHTML = `
 
 export class AppContainer extends HTMLElement {
     private chatTitle:string;
-    constructor(chatTitle: string)  {
+    private authInfo:AuthInfo;
+    constructor(chatTitle: string, authInfo:AuthInfo)  {
         super();
         this.chatTitle = chatTitle;
+        this.authInfo = authInfo;
         this.render();
     }
 
@@ -73,6 +77,12 @@ export class AppContainer extends HTMLElement {
             // TODO: send the message if Enter pressed
             console.log(e.key);
         });
+
+
+        // HACK
+        const addParticipantDialog:AddParticipantDialog = new AddParticipantDialog(this.authInfo);
+        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
+        
 
         this.appendChild(dom);
     }
