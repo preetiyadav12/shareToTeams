@@ -1,3 +1,4 @@
+import { PhotoUtil } from "../api/photoUtil";
 import { AuthInfo } from "src/models";
 import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
@@ -57,6 +58,7 @@ template.innerHTML = `
     </div>`;
 
 export class AppContainer extends HTMLElement {
+<<<<<<< HEAD
   private chatTitle: string;
   private authInfo: AuthInfo;
   constructor(chatTitle: string, authInfo: AuthInfo) {
@@ -86,6 +88,39 @@ export class AppContainer extends HTMLElement {
 
     this.appendChild(dom);
   };
+=======
+    private chatTitle:string;
+    private authInfo:AuthInfo;
+    private photoUtil:PhotoUtil;
+    constructor(chatTitle: string, authInfo:AuthInfo)  {
+        super();
+        this.chatTitle = chatTitle;
+        this.authInfo = authInfo;
+        this.photoUtil = new PhotoUtil();
+        this.render();
+    }
+
+    render = () => {
+        const dom = <HTMLElement>template.content.cloneNode(true);
+        (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
+        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
+            // TODO: append the participant list here
+
+            // HACK
+            const addParticipantDialog:AddParticipantDialog = new AddParticipantDialog(this.authInfo, this.photoUtil);
+            (<HTMLElement>document.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
+        });
+        (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
+            // TODO: send the message
+        });
+        (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
+            // TODO: send the message if Enter pressed
+            console.log(e.key);
+        });
+
+        this.appendChild(dom);
+    }
+>>>>>>> 0132d94227678e620e9257e7b1698a0f5661b982
 }
 
 function createParticipantList(participantList: Person[], callback: any) {

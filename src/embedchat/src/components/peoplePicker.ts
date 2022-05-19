@@ -3,12 +3,15 @@ import { AuthInfo } from "src/models";
 import { Person } from "src/models/person";
 import { PeopleItem } from "./peopleItem";
 import { PeoplePickerSelection } from "./peoplePickerSelection";
+import { PhotoUtil } from "src/api/photoUtil";
 
 const template = document.createElement("template");
 template.innerHTML = `
     <div class="teams-embed-peoplepicker">
-        <div class="teams-embed-peoplepicker-input">
-            <div class="teams-embed-peoplepicker-input-ctrl" contenteditable="true"></div>
+        <div class="teams-embed-peoplepicker-input-wrapper">
+            <div class="teams-embed-peoplepicker-input">
+                <div class="teams-embed-peoplepicker-input-ctrl" contenteditable="true"></div>
+            </div>
         </div>
         <div class="teams-embed-peoplepicker-suggestions" style="display: none">
 
@@ -28,9 +31,11 @@ export class PeoplePicker extends HTMLElement {
     private authInfo:AuthInfo;
     private searchResults:Person[];
     private selections:Person[];
-    constructor(authInfo:AuthInfo) {
+    private photoUtil:PhotoUtil;
+    constructor(authInfo:AuthInfo, photoUtil:PhotoUtil) {
         super();
         this.authInfo = authInfo;
+        this.photoUtil = photoUtil;
         this.searchResults = [];
         this.selections = [];
         this.render();
@@ -45,7 +50,7 @@ export class PeoplePicker extends HTMLElement {
 
         const input = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-ctrl"));
         const suggestionContainer = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-suggestions"));
-        const picker = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker"));
+        const picker = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-wrapper"));
         const inputOuter = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input"));
         
         input.innerText = "";
@@ -60,7 +65,7 @@ export class PeoplePicker extends HTMLElement {
     };
 
     personRemoved = (selection:Person) => {
-        const picker = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker"));
+        const picker = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-wrapper"));
         const index = this.selections.indexOf(selection);
         this.selections.splice(index, 1);
         picker.removeChild(picker.children[index]);
@@ -105,9 +110,14 @@ export class PeoplePicker extends HTMLElement {
                 });
                 results.forEach((obj:any, i:number) => {
                     if (selectedIds.indexOf(obj.id) === -1) {
-                        const person:Person = { id: obj.id, displayName: obj.displayName, userPrincipalName: obj.userPrincipalName, photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png" };
+                        const person:Person = { id: obj.id, displayName: obj.displayName, userPrincipalName: obj.userPrincipalName, photo: this.photoUtil.emptyPic };
                         this.searchResults.push(person);
-                        suggestionContainer.insertBefore(new PeopleItem(person, i, this.personSelected.bind(this, i)), waiting);
+                        const peopleItem = new PeopleItem(person, i, this.personSelected.bind(this, i));
+                        suggestionContainer.insertBefore(peopleItem, waiting);
+                        this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, person.id).then((pic:string) => {
+                            person.photo = pic;
+                            peopleItem.refresh(person);
+                        });
                     }
                 });
 

@@ -1,3 +1,4 @@
+import { PhotoUtil } from "src/api/photoUtil";
 import { AuthInfo } from "src/models";
 import { PeoplePicker } from "./peoplePicker";
 
@@ -25,9 +26,11 @@ template.innerHTML = `
 
 export class AddParticipantDialog extends HTMLElement {
     private authInfo:AuthInfo;
-    constructor(authInfo:AuthInfo) {
+    private photoUtil:PhotoUtil;
+    constructor(authInfo:AuthInfo, photoUtil:PhotoUtil) {
         super();
         this.authInfo = authInfo;
+        this.photoUtil = photoUtil;
         this.render();
     }
 
@@ -35,7 +38,7 @@ export class AddParticipantDialog extends HTMLElement {
         const dom = <HTMLElement>template.content.cloneNode(true);
 
         // initialize and add the people picker
-        const peoplePicker:PeoplePicker = new PeoplePicker(this.authInfo);
+        const peoplePicker:PeoplePicker = new PeoplePicker(this.authInfo, this.photoUtil);
         (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-form")).children[0].after(peoplePicker);
 
         this.appendChild(dom);

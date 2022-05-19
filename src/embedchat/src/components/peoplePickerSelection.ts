@@ -25,6 +25,11 @@ export class PeoplePickerSelection extends HTMLElement {
             (<HTMLElement>dom.querySelector(".teams-embed-peoplepicker-selection-remove")).addEventListener("click", onRemove);
         this.appendChild(dom);
     }
+
+    refresh = (person: Person) => {
+        (<HTMLImageElement>this.querySelector(".teams-embed-peoplepicker-selection-img")).src = person.photo;
+        (<HTMLElement>this.querySelector(".teams-embed-peoplepicker-selection-name")).innerText = person.displayName;
+    };
 }
 
 customElements.define("people-picker-selection", PeoplePickerSelection);
