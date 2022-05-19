@@ -25,24 +25,33 @@ template.innerHTML = `
     </div>`;
 
 export class AddParticipantDialog extends HTMLElement {
-    private authInfo:AuthInfo;
-    private photoUtil:PhotoUtil;
-    constructor(authInfo:AuthInfo, photoUtil:PhotoUtil) {
-        super();
-        this.authInfo = authInfo;
-        this.photoUtil = photoUtil;
-        this.render();
-    }
+  private authInfo: AuthInfo;
+  private photoUtil: PhotoUtil;
+  constructor(authInfo: AuthInfo, photoUtil: PhotoUtil) {
+    super();
+    this.authInfo = authInfo;
+    this.photoUtil = photoUtil;
+    this.render();
+  }
 
-    render = () => {
-        const dom = <HTMLElement>template.content.cloneNode(true);
+  render = () => {
+    const dom = <HTMLElement>template.content.cloneNode(true);
 
-        // initialize and add the people picker
-        const peoplePicker:PeoplePicker = new PeoplePicker(this.authInfo, this.photoUtil);
-        (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-form")).children[0].after(peoplePicker);
+    // initialize and add the people picker
+    const peoplePicker: PeoplePicker = new PeoplePicker(this.authInfo, this.photoUtil);
+    (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-form")).children[0].after(peoplePicker);
 
-        this.appendChild(dom);
-    }
+    (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-add")).addEventListener("click", () => {
+      //TODO: Do add logic to add the participant to meeting
+      (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "none";
+    });
+
+    (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-cancel")).addEventListener("click", () => {
+      (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "none";
+    });
+
+    this.appendChild(dom);
+  };
 }
 
 customElements.define("add-participant-dialog", AddParticipantDialog);
