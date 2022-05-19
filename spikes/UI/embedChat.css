@@ -689,3 +689,7 @@
   display: block;
 }
 /* End Footer */
+
+.teams-embed-mention-user {
+  color: rgb(91, 95, 199);
+}

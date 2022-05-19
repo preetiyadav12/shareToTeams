@@ -64,61 +64,54 @@ export class AppContainer extends HTMLElement {
     private photoUtil: PhotoUtil;
     private dialog:AddParticipantDialog;
     private participantList?:ParticipantList;
-    private mentionContainerOpen: boolean;
     private mentionResults: Person[];
     private mentionInput: string;
     private personList: Person[];
+    private atMentionList: Person[];
     constructor(chatTitle: string, authInfo: AuthInfo) {
         super();
         this.chatTitle = chatTitle;
         this.authInfo = authInfo;
         this.photoUtil = new PhotoUtil();
         this.dialog =  new AddParticipantDialog(this.authInfo, this.photoUtil);
-        this.mentionContainerOpen = false;
         this.mentionResults = [];
         this.mentionInput = "";
         this.personList = [];
+        this.atMentionList = [];
         this.render();
     }
 
     mentionSelected = (selectedIndex: number) => {
-        console.log(selectedIndex);
-
         const selectedUser = this.mentionResults[selectedIndex];
-
-
+        this.atMentionList.push(selectedUser);
         const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"));
-        const atMentionHtml = `<at id="0">${selectedUser.displayName}</at>`;
+        const atMentionHtml = `<readonly class="teams-embed-mention-user" contenteditable="false" userId="${selectedUser.id}">${selectedUser.displayName}</readonly>&ZeroWidthSpace;`;
         const inputHtml = input.innerHTML.replace("@"+this.mentionInput, atMentionHtml);
         input.innerHTML = inputHtml;
-
+        
+        // close mention dialog and clear results
         const mentionContainer = (<HTMLElement>document.querySelector(".teams-embed-input-mention-container"));
         mentionContainer.style.display = "none";
-        this.mentionContainerOpen = false;
-
-        // const suggestionContainer = (<HTMLElement>document.querySelector(".teams-embed-mention-suggestions"));
-        // //const inputOuter = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input"));
-        
-        // input.innerText = "";
-        // suggestionContainer.style.display = "none";
-        // const selection:Person = this.searchResults[selectedIndex];
-        // this.selections.push(selection);
-        // this.searchResults = [];
-
-        //const insertIndex = this.selections.length - 1;
-        // picker.insertBefore(
-        //     new PeoplePickerSelection(selection, insertIndex, this.personRemoved.bind(this, selection)), inputOuter);
+        this.mentionResults = [];
     };
 
     atMention = (evt: KeyboardEvent) => {
-        // get the suggestions pane DOM elements
         const mentionContainer = (<HTMLElement>document.querySelector(".teams-embed-input-mention-container"));
+
+        // close dialog if hit escape
+        if (evt.key == "Escape") {
+            // close the mention results window
+            this.mentionResults = [];
+            mentionContainer.style.display = "none";
+            return;
+        } 
     
         const sel: any = window.getSelection();
+        // if not input return
         if (sel.anchorNode.nodeValue == null) return;
+        
         const lastCharacter = sel.anchorNode.nodeValue[sel.focusOffset - 1];
-        if (!this.mentionContainerOpen && lastCharacter === '@') {
-            this.mentionContainerOpen = true;
+        if (lastCharacter === '@') {
             this.mentionResults = [];
             this.personList.forEach((person:Person, i:number) => {                
                 this.mentionResults.push(person);
@@ -129,107 +122,30 @@ export class AppContainer extends HTMLElement {
             mentionContainer.style.display = "block";
         }
 
-        
         const inputToFocus = sel.anchorNode.nodeValue.substring(0, sel.focusOffset);
         const atIndex = inputToFocus.lastIndexOf("@") + 1;
         if (atIndex == 0) {
             mentionContainer.style.display = "none";
-            this.mentionContainerOpen = false;
             return;
         }
 
         this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trim().replaceAll(" ", "");
+        mentionContainer.style.display = "block";
 
-        //if (this.mentionContainerOpen) {
-            // another key event happened, close dialog
-            // if (evt.key.length > 1) {
-            //     mentionContainer.style.display = "none";
-            //     this.mentionContainerOpen = false;
-            //     return;
-            // }            
+        // filter
+        this.mentionResults = [];
+        mentionContainer.innerHTML = "";
+        const results = this.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
+        if (results.length == 0) {
+            mentionContainer.style.display = "none";
+            return;
+        }
 
-            mentionContainer.style.display = "block";
-            this.mentionContainerOpen = true;
-
-            // filter
-            this.mentionResults = [];
-            mentionContainer.innerHTML = "";
-            const results = this.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
-            if (results?.length == 0) {
-                mentionContainer.style.display = "none";
-                this.mentionContainerOpen = false;
-                return;
-            }
-
-            results?.forEach((person:Person, i:number) => {                
-                this.mentionResults.push(person);
-                const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
-                mentionContainer.appendChild(peopleItem);
-            });
-
-            console.log(this.mentionInput);
-        // } else {
-        //     // if the user goes back to a previous string of "@Nam"
-        //     this.mentionResults = [];
-        //     mentionContainer.innerHTML = "";
-        //     const results = this.participantList?.personList.filter(person => person.displayName.toLowerCase().startsWith(this.mentionInput.toLowerCase()));
-        //     results?.forEach((person:Person, i:number) => {                
-        //         this.mentionResults.push(person);
-        //         const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
-        //         mentionContainer.appendChild(peopleItem);
-        //     });
-
-        //     console.log(this.mentionInput);
-        // }
-    
-        // // check what to do
-        // if (evt.key == "Escape" || evt.key == "TAB") {
-        //     // close the suggestions
-        //     this.searchResults = [];
-        //     suggestionContainer.style.display = "none";
-        //     waiting.style.display = "none";
-        //     noresults.style.display = "none";
-        //     this.input.innerText = "";
-        // } 
-        // else if (this.input.innerText.length > 1) {
-        //     // display suggestions container and waiting indicator
-        //     suggestionContainer.style.display = "block";
-        //     waiting.style.display = "block";
-            
-        //     // call graph to get matches
-        //     const results = await GraphUtil.searchPeople(this.authInfo.accessToken, this.input.innerText.replace('@', ''));
-    
-        //     // clear any old suggestions
-        //     while (suggestionContainer.children.length > 2) {
-        //         suggestionContainer.removeChild(suggestionContainer.children[0]);
-        //     }
-    
-        //     // parse the results
-        //     this.searchResults = [];
-        //     const selectedIds = this.selections.map((p:Person, i:number) => {
-        //         return p.id;
-        //     });
-        //     results.forEach((obj:any, i:number) => {
-        //         if (selectedIds.indexOf(obj.id) === -1) {
-        //             const person:Person = { id: obj.id, displayName: obj.displayName, userPrincipalName: obj.userPrincipalName, photo: this.photoUtil.emptyPic };
-        //             this.searchResults.push(person);
-        //             const peopleItem = new PeopleItem(person, i, this.personSelected.bind(this, i));
-        //             suggestionContainer.insertBefore(peopleItem, waiting);
-        //             this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, person.id).then((pic:string) => {
-        //                 person.photo = pic;
-        //                 peopleItem.refresh(person);
-        //             });
-        //         }
-        //     });
-    
-        //     // show no results if empty
-        //     if (this.searchResults.length === 0) {
-        //         noresults.style.display = "block";
-        //     }
-    
-        //     // update the UI
-        //     waiting.style.display = "none";
-        // }
+        results.forEach((person:Person, i:number) => {                
+            this.mentionResults.push(person);
+            const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
+            mentionContainer.appendChild(peopleItem);
+        });
     }
 
     render = () => {
