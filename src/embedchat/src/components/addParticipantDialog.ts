@@ -27,10 +27,14 @@ template.innerHTML = `
 export class AddParticipantDialog extends HTMLElement {
   private authInfo: AuthInfo;
   private photoUtil: PhotoUtil;
-  constructor(authInfo: AuthInfo, photoUtil: PhotoUtil) {
+  private onSave?:any;
+  private onCancel?:any;
+  constructor(authInfo: AuthInfo, photoUtil: PhotoUtil, onSave?:any, onCancel?:any) {
     super();
     this.authInfo = authInfo;
     this.photoUtil = photoUtil;
+    this.onSave = onSave;
+    this.onCancel = onCancel;
     this.render();
   }
 
@@ -55,13 +59,15 @@ export class AddParticipantDialog extends HTMLElement {
 
     (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-add")).addEventListener("click", () => {
       //TODO: Do add logic to add the participant to meeting
+      if (this.onSave)
+        this.onSave(peoplePicker.getSelections());
       this.hide();
-      // TODO: should we raise an event???
     });
 
     (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-cancel")).addEventListener("click", () => {
+      if (this.onCancel)
+        this.onCancel();
       this.hide();
-      // TODO: should we raise an event???
     });
 
     this.appendChild(dom);
