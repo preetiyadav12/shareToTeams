@@ -3,7 +3,7 @@ import { Person } from "../models/person";
 
 const template = document.createElement("template");
 template.innerHTML = `
-    <div class="teams-embed-participant-container">
+    <div class="teams-embed-participant-container" style="display: none;">
         <div class="teams-embed-participant-list">
             <!-- List of PeopleItems -->
         </div>
@@ -30,10 +30,23 @@ export class ParticipantList extends HTMLElement {
     this.render();
   }
 
+  show = () => {
+    (<HTMLElement>this.querySelector(".teams-embed-participant-container")).style.display = "flex";
+  };
+
+  hide = () => {
+    (<HTMLElement>this.querySelector(".teams-embed-participant-container")).style.display = "none";
+  };
+
+  toggle = () => {
+    if ((<HTMLElement>this.querySelector(".teams-embed-participant-container")).style.display == "none")
+      this.show();
+    else
+      this.hide();
+  };
+
   render() {
     const container = <HTMLElement>template.content.cloneNode(true);
-    (<HTMLElement>container.querySelector(".teams-embed-participant-container")).style.display = "none";
-
     const participantList = <HTMLElement>container.querySelector(".teams-embed-participant-list");
     this.personList.forEach((person, index) => {
       const peopleItem = new PeopleItem(person, index, null);

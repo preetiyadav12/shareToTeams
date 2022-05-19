@@ -4,7 +4,7 @@ import { PeoplePicker } from "./peoplePicker";
 
 const template = document.createElement("template");
 template.innerHTML = `
-    <div class="teams-embed-add-participant-dialog">
+    <div class="teams-embed-add-participant-dialog" style="display: none;">
         <div class="teams-embed-add-participant-dialog-form">
             <h3>Add</h3>
             
@@ -34,6 +34,18 @@ export class AddParticipantDialog extends HTMLElement {
     this.render();
   }
 
+  show = (meetingExists:boolean) => {
+    (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "block";
+    const radios = <NodeListOf<HTMLElement>>this.querySelectorAll(".teams-embed-add-participant-dialog-radio");
+    radios.forEach((element:HTMLElement, i:number) => {
+        element.style.display = (meetingExists) ? "block" : "none";
+    });
+  };
+
+  hide = () => {
+    (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "none";
+  };
+
   render = () => {
     const dom = <HTMLElement>template.content.cloneNode(true);
 
@@ -43,11 +55,13 @@ export class AddParticipantDialog extends HTMLElement {
 
     (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-add")).addEventListener("click", () => {
       //TODO: Do add logic to add the participant to meeting
-      (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "none";
+      this.hide();
+      // TODO: should we raise an event???
     });
 
     (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog-cancel")).addEventListener("click", () => {
-      (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "none";
+      this.hide();
+      // TODO: should we raise an event???
     });
 
     this.appendChild(dom);
