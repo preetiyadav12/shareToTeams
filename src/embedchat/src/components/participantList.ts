@@ -21,7 +21,7 @@ template.innerHTML = `
     `;
 
 export class ParticipantList extends HTMLElement {
-  private personList: Person[];
+  public personList: Person[];
   private callback: any;
   constructor(personList: Person[], callback: any) {
     super();
