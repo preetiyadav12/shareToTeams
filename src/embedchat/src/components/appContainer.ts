@@ -67,6 +67,7 @@ export class AppContainer extends HTMLElement {
     private mentionContainerOpen: boolean;
     private mentionResults: Person[];
     private mentionInput: string;
+    private personList: Person[];
     constructor(chatTitle: string, authInfo: AuthInfo) {
         super();
         this.chatTitle = chatTitle;
@@ -76,6 +77,7 @@ export class AppContainer extends HTMLElement {
         this.mentionContainerOpen = false;
         this.mentionResults = [];
         this.mentionInput = "";
+        this.personList = [];
         this.render();
     }
 
@@ -118,7 +120,7 @@ export class AppContainer extends HTMLElement {
         if (!this.mentionContainerOpen && lastCharacter === '@') {
             this.mentionContainerOpen = true;
             this.mentionResults = [];
-            this.participantList?.personList.forEach((person:Person, i:number) => {                
+            this.personList.forEach((person:Person, i:number) => {                
                 this.mentionResults.push(person);
                 const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
                 mentionContainer.appendChild(peopleItem);
@@ -152,7 +154,7 @@ export class AppContainer extends HTMLElement {
             // filter
             this.mentionResults = [];
             mentionContainer.innerHTML = "";
-            const results = this.participantList?.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
+            const results = this.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
             if (results?.length == 0) {
                 mentionContainer.style.display = "none";
                 this.mentionContainerOpen = false;
@@ -238,13 +240,13 @@ export class AppContainer extends HTMLElement {
         (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
     
         // TODO: get participants
-        const participantList = getPartipicipants("");
+        this.personList = getPartipicipants("");
 
         // set participant count in header
-        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML = participantList.length.toString();
+        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML = this.personList.length.toString();
     
         // add the participants list
-        this.participantList = createParticipantList(participantList, () => {
+        this.participantList = createParticipantList(this.personList, () => {
             if (this.participantList)
                 this.participantList.hide();
             this.dialog.show(true);
