@@ -45,10 +45,16 @@ namespace Microsoft.Teams.EmbeddedChat
 
                     if (entities.Any())
                     {
+                        // Get the updated list of participants for each entity
+                        // TODO
+                        var updatedEntities = entities;
+
                         // at least one entity mapping found
                         // now we'll check if this user was the owner of one of the entities in the list
-                        var entityState = entities.FirstOrDefault(e => e.Owner == requestData.Username);
-                        if (entityState != null) // This user is the owner of the entity! Return it!
+                        var entityState = updatedEntities.FirstOrDefault(
+                            e => e.Participants.Any(p => p.Username == requestData.Username));
+
+                        if (entityState != null) // This user is one of the participants in this entity chat!
                         {
                             // If the ACS Token has expired, we'll refresh it and then update the state
                             if (DateTime.Parse(entityState.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
@@ -71,42 +77,47 @@ namespace Microsoft.Teams.EmbeddedChat
                                     log.LogWarning($"{Constants.UpdateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
                                 }
                             }
+
+                            // Update the entity response status
+                            entityState.IsSuccess = true;
+
                             return entityState;
                         }
 
-                        // No entity found for the particular user, let's check the participants list
-                    }
-                    // If the entity state doesn't exist and if the ACS Token has not expired
-                    else
-                    {
-                        log.LogWarning($"Entity State for the entity id {requestData.EntityId} has not been found. Creating a new one...");
+                        // None of the entities contain this user as the participant
+                        // We're going to denied this user's accessing this entity
+                        var owners = entities.Select(e => e.RowKey).ToArray();
 
-                        // create a new entity state and save it in the durable storage
-                        var entityState = await context.CallActivityAsync<EntityState>(Constants.CreateEntityStateActivity, requestData);
-
-                        if (!context.IsReplaying)
+                        return new EntityState
                         {
-                            log.LogWarning($"{Constants.CreateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
-                        }
+                            EntityId = requestData.EntityId,
+                            IsSuccess = false,
+                            RowKey = String.Join(",", owners),
+                            CorrelationId = requestData.CorrelationId
+                        };
                     }
-                    break;
 
-                case ApiOperation.UpdateEntityState:
-                    // update the entity state
-                    var (updateActivityStatus, updatedEntityState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, orchestrationRequest.Request);
-                    if (updateActivityStatus == false)
-                    {
-                        log.LogError($"Failed to update the entity with Id: {orchestrationRequest.Request.EntityId}");
-                        return null;
-                    }
+                    // No entity mapping is found
+                    return null;
+
+                // Create Entity
+                case ApiOperation.CreateEntityState:
+
+                    // Create a new Online Meeting and get the Thread Id
+                    requestData.ThreadId = await context.CallActivityAsync<string>(Constants.CreateOnlineMeetingActivity,
+                        requestData);
+
+                    // create a new entity state and save it in the durable storage
+                    var newState = await context.CallActivityAsync<EntityState>(Constants.CreateEntityStateActivity,
+                        requestData);
 
                     if (!context.IsReplaying)
                     {
-                        log.LogWarning($"{Constants.UpdateEntityStateActivity} Activity completed for the entity id {orchestrationRequest.Request.EntityId}.");
+                        log.LogWarning($"{Constants.CreateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
                     }
 
                     // update the entity state returning to the caller
-                    return updatedEntityState;
+                    return newState;
 
                 default:
                     log.LogError("No Orchestration Function Activities found to execute.");

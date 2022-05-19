@@ -10,7 +10,6 @@ namespace Microsoft.Teams.EmbeddedChat.Models
     public class EntityState : IBaseTableEntity
     {
         public string EntityId { get; set; }
-        public string Owner { get; set; }
         public string ThreadId { get; set; }
         public string AcsUserId { get; set; }
         public string AcsToken { get; set; }

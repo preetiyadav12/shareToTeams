@@ -6,5 +6,6 @@ export interface ChatInfoRequest extends BaseModel {
   userName: string;
   accessToken: string;
   topic: string;
+  threadId?: string;
   participants?: Participant[];
 }

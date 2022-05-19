@@ -61,10 +61,19 @@ export class EmbeddedChat {
       topic: this.chatTopic,
       participants: [],
       correlationId: uuidv4(),
+      isSuccess: false,
     };
 
     // try to get the mapping for this entity id
     const entityState: EntityState = (await entityApi.getMapping(chatRequest))!;
+    if (!entityState) {
+      alert(`No entity mapping found for this entity: ${entityId}`);
+    }
+    if (!entityState.isSuccess) {
+      alert(
+        `There is at least one other chat for this entity is in progress. Please contact one of the owners of the existing chats: ${entityState.owner}`,
+      );
+    }
 
     console.log(`Entity Id: ${entityState.entityId}`);
     console.log(`Thread Id: ${entityState.threadId}`);

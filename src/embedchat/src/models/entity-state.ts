@@ -3,7 +3,7 @@ import { Participant } from "./participant";
 
 export interface EntityState extends BaseModel {
   entityId: string;
-  ownerId: string;
+  owner: string;
   threadId: string;
   acsUserId: string;
   acsToken: string;

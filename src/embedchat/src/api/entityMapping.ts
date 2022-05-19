@@ -27,24 +27,36 @@ export class EntityApi {
       body: JSON.stringify(chatInfoRequest),
     };
 
-    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping`, requestOptions);
+    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity`, requestOptions);
 
-    if (!resp.ok) return undefined;
+    console.log(resp);
+    if (resp.ok) {
+      const data = (await resp.json()) as EntityState;
+      if (data.isSuccess) {
+        return data;
+      } else {
+        return;
+      }
+    } else {
+      if (resp.status === 404)
+        // Entity is not found
+        return undefined;
+    }
 
     return await resp.json();
   };
 
-  public updateMapping = async (entity: EntityState): Promise<boolean> => {
+  public createChat = async (chatInfoRequest: ChatInfoRequest): Promise<boolean> => {
     const requestOptions = {
       method: "POST",
       headers: new Headers({
         Authorization: `Bearer ${this.idToken}`,
         "Content-Type": "application/json",
       }),
-      body: JSON.stringify(entity),
+      body: JSON.stringify(chatInfoRequest),
     };
 
-    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping/update`, requestOptions);
+    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/create`, requestOptions);
 
     return resp.ok;
   };
