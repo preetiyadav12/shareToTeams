@@ -58,56 +58,63 @@ template.innerHTML = `
     </div>`;
 
 export class AppContainer extends HTMLElement {
-  private chatTitle: string;
-  private authInfo: AuthInfo;
-  private photoUtil: PhotoUtil;
-  constructor(chatTitle: string, authInfo: AuthInfo) {
-    super();
-    this.chatTitle = chatTitle;
-    this.authInfo = authInfo;
-    this.photoUtil = new PhotoUtil();
-    this.render();
-  }
+    private chatTitle: string;
+    private authInfo: AuthInfo;
+    private photoUtil: PhotoUtil;
+    private dialog:AddParticipantDialog;
+    private participantList?:ParticipantList;
+    constructor(chatTitle: string, authInfo: AuthInfo) {
+        super();
+        this.chatTitle = chatTitle;
+        this.authInfo = authInfo;
+        this.photoUtil = new PhotoUtil();
+        this.dialog =  new AddParticipantDialog(this.authInfo, this.photoUtil);
+        this.render();
+    }
 
-  render = () => {
-    const dom = <HTMLElement>template.content.cloneNode(true);
-    (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
-    //create and hide ParticipantList
-    const participantList = getPartipicipants("");
-    (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML =
-      participantList.length.toString();
-    (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(
-      createParticipantList(participantList, () => {
-        (<HTMLElement>this.querySelector(".teams-embed-add-participant-dialog")).style.display = "block";
-      }),
-    );
-    (<HTMLElement>dom.querySelector(".teams-embed-participant-container")).style.display = "none";
+    render = () => {
+        // get the template
+        const dom = <HTMLElement>template.content.cloneNode(true);
+    
+        // set chat title
+        (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
+    
+        // TODO: get participants
+        const participantList = getPartipicipants("");
 
-    //create and hide AddParticipantDialog
-    const dialog = new AddParticipantDialog(this.authInfo, this.photoUtil);
-    (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(dialog);
-    (<HTMLElement>dom.querySelector(".teams-embed-add-participant-dialog")).style.display = "none";
+        // set participant count in header
+        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML = participantList.length.toString();
+    
+        // add the participants list
+        this.participantList = createParticipantList(participantList, () => {
+            if (this.participantList)
+                this.participantList.hide();
+            this.dialog.show(true);
+        });
+        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.participantList);
 
-    (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
-      // TODO: append the participant list here
-      const pListContainer = <HTMLElement>this.querySelector(".teams-embed-participant-container");
-      pListContainer.style.display = pListContainer.style.display == "none" ? "block" : "none";
-      /*
-      // HACK
-      const addParticipantDialog: AddParticipantDialog = new AddParticipantDialog(this.authInfo, this.photoUtil);
-      (<HTMLElement>document.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
-      */
-    });
-    (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
-      // TODO: send the message
-    });
-    (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
-      // TODO: send the message if Enter pressed
-      console.log(e.key);
-    });
+        // add the add participant dialog
+        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.dialog);
 
-    this.appendChild(dom);
-  };
+        // wire even to toggle participant list
+        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
+            if (this.participantList)
+                this.participantList.toggle();
+        });
+
+        // wire event to sent message
+        (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
+            // TODO: send the message
+        });
+        
+        // wire event to send message on ENTER
+        (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
+            // TODO: send the message if Enter pressed
+            console.log(e.key);
+        });
+
+        this.appendChild(dom);
+    };
 }
 
 function createParticipantList(participantList: Person[], callback: any) {
