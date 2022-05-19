@@ -26,6 +26,9 @@
     {
       "name": "Spikes/EntityMapping",
       "path": "spikes/EntityMapping"
+    },
+    {
+      "path": "spikes/UI"
     }
   ],
   "extensions": {
@@ -68,7 +71,7 @@
     "[shellscript]": {
       "editor.defaultFormatter": "shakram02.bash-beautify"
     },
-    "liveServer.settings.multiRootWorkspaceName": "Samples/NodeJs",
+    "liveServer.settings.multiRootWorkspaceName": "UI",
     "debug.internalConsoleOptions": "neverOpen",
     "liveServer.settings.ChromeDebuggingAttachment": false,
     "liveServer.settings.port": 5501,

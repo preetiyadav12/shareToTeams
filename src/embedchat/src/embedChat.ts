@@ -8,6 +8,7 @@ import { EntityApi } from "./api/entityMapping";
 import { PhotoUtil } from "./api/photoUtil";
 import { ButtonPage } from "./components/buttonPage";
 import { ChatInfoRequest } from "./models/chat-info-request";
+import { Waiting } from "./components/waiting";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
@@ -15,9 +16,11 @@ export class EmbeddedChat {
   private chatClient?: ChatClient;
   private profilePics: Record<string, string> = {};
   private chatTopic = "Chat Topic Name";
+  private waiting: Waiting;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
+    this.waiting = new Waiting();
 
     // add link to css
     // TODO: we might need to check if it already exists for SPAs
@@ -25,6 +28,7 @@ export class EmbeddedChat {
     linkElement.setAttribute("rel", "stylesheet");
     linkElement.setAttribute("type", "text/css");
     linkElement.setAttribute("href", `https://${config.hostDomain}/embedChat.css`);
+    document.head.append(linkElement);
   }
 
   public PrintName = (name: string): string => {
@@ -37,7 +41,10 @@ export class EmbeddedChat {
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
 
-    const authResult = await AuthUtil.acquireToken(element, this.appSettings);
+    // add waiting indicator to UI and display it while we authenticate and check for mapping
+    element.appendChild(this.waiting);
+    this.waiting.show();
+    const authResult = await AuthUtil.acquireToken(element, this.appSettings, this.waiting);
     console.log(authResult);
     if (!authResult) {
       console.log("authResult cannot be null!");
@@ -95,6 +102,7 @@ export class EmbeddedChat {
     const messages: CM[] = [];
     if (!entityState.threadId || entityState.threadId === "") {
       // TODO: check autoStart value
+      this.waiting.hide();
       const btn = new ButtonPage("Start Teams Chat", async () => {
         // this is a new thread...start it
         console.log("Starting a new Chat thread...");
@@ -123,6 +131,9 @@ export class EmbeddedChat {
           this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
         }
       }
+
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     }
 
     // listen for events
