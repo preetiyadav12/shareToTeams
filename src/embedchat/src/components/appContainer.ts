@@ -1,6 +1,8 @@
 import { AuthInfo } from "src/models";
 import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
+import { Person } from "../models/person";
+import { ParticipantList } from "./participantList";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -55,37 +57,77 @@ template.innerHTML = `
     </div>`;
 
 export class AppContainer extends HTMLElement {
-    private chatTitle:string;
-    private authInfo:AuthInfo;
-    constructor(chatTitle: string, authInfo:AuthInfo)  {
-        super();
-        this.chatTitle = chatTitle;
-        this.authInfo = authInfo;
-        this.render();
-    }
+  private chatTitle: string;
+  private authInfo: AuthInfo;
+  constructor(chatTitle: string, authInfo: AuthInfo) {
+    super();
+    this.chatTitle = chatTitle;
+    this.authInfo = authInfo;
+    this.render();
+  }
 
-    render = () => {
-        const dom = <HTMLElement>template.content.cloneNode(true);
-        (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
-        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
-            // TODO: append the participant list here
-        });
-        (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
-            // TODO: send the message
-        });
-        (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
-            // TODO: send the message if Enter pressed
-            console.log(e.key);
-        });
+  render = () => {
+    const dom = <HTMLElement>template.content.cloneNode(true);
+    (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
+    (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
+      // TODO: append the participant list here
+    });
+    (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
+      // TODO: send the message
+    });
+    (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
+      // TODO: send the message if Enter pressed
+      console.log(e.key);
+    });
 
+    // HACK
+    const addParticipantDialog: AddParticipantDialog = new AddParticipantDialog(this.authInfo);
+    (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
 
-        // HACK
-        const addParticipantDialog:AddParticipantDialog = new AddParticipantDialog(this.authInfo);
-        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(addParticipantDialog);
-        
+    this.appendChild(dom);
+  };
+}
 
-        this.appendChild(dom);
-    }
+function createParticipantList(participantList: Person[], callback: any) {
+  //todo:retrieve participantlist from entitystate
+
+  const pList = new ParticipantList(participantList, callback);
+  return pList;
+}
+
+function getPartipicipants(entityId: string) {
+  const personList = [];
+
+  const person1: Person = {
+    id: "1",
+    displayName: "Emily Braun",
+    userPrincipalName: "a@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  const person2: Person = {
+    id: "2",
+    displayName: "Isaiah Langer",
+    userPrincipalName: "b@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  const person3: Person = {
+    id: "3",
+    displayName: "Enrico Cattaneo",
+    userPrincipalName: "c@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  const person4: Person = {
+    id: "4",
+    displayName: "Patti Fernandez",
+    userPrincipalName: "d@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  personList.push(person1);
+  personList.push(person2);
+  personList.push(person3);
+  personList.push(person4);
+
+  return personList;
 }
 
 customElements.define("app-container", AppContainer);
