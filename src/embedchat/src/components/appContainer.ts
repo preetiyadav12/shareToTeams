@@ -157,10 +157,13 @@ export class AppContainer extends HTMLElement {
     }
 
     sendMessage = () => {
+        const replaceEmptyDiv = "<div><br></div>";
         const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"))
-        const chatItem = new ChatItem(input.innerHTML);
+        const chatItem = new ChatItem(input.innerHTML.replace(replaceEmptyDiv, ""));
         const chatItems = (<HTMLElement>document.querySelector(".teams-embed-chat-items"));
         chatItems.appendChild(chatItem);
+        
+        // scroll to the bottom of the div
         const chatContainer = (<HTMLElement>document.querySelector(".teams-embed-chat"))
         chatContainer.scrollTop = chatContainer.scrollHeight;
         input.innerHTML = "";
