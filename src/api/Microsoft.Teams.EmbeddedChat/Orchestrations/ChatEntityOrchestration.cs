@@ -108,13 +108,17 @@ namespace Microsoft.Teams.EmbeddedChat
 
                         // None of the entities contain this user as the participant
                         // We're going to denied this user's accessing this entity
-                        var owners = entities.Select(e => e.RowKey).ToArray();
+                        var ownerNames = entities.Select(e => e.Owner.UserPrincipalName).ToArray();
+                        var owners = new Person
+                        {
+                            UserPrincipalName = String.Join(",", ownerNames)
+                        };
 
                         return new EntityState
                         {
                             EntityId = requestData.EntityId,
                             IsSuccess = false,
-                            RowKey = String.Join(",", owners),
+                            Owner = owners,
                             CorrelationId = requestData.CorrelationId
                         };
                     }
@@ -133,14 +137,13 @@ namespace Microsoft.Teams.EmbeddedChat
                     // Create a new Entity State
                     var newState = new EntityState
                     {
-                        PartitionKey = requestData.EntityId,
-                        RowKey = requestData.Owner.Id,
                         EntityId = requestData.EntityId,
                         Owner = requestData.Owner,
                         ChatInfo = chatInfo,
                         AcsInfo = acsInfo,
+                        Participants = requestData.Participants,
                         CorrelationId = requestData.CorrelationId,
-                        IsSuccess = false
+                        IsSuccess = true
                     };
 
                     if (!context.IsReplaying)

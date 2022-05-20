@@ -118,7 +118,7 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
         /// <returns></returns>
         public IEnumerable<IBaseTableEntity> GetPartition(string partitionKey)
         {
-            var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey);
+            var queryResultsLINQ = _tableClient.Query<EntityStateRecord>(ent => ent.PartitionKey == partitionKey);
 
             return queryResultsLINQ.ToList();
         }
@@ -131,7 +131,7 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
         /// <returns></returns>
         public IEnumerable<IBaseTableEntity> GetEntities(string partitionKey)
         {
-            var queryResultsLINQ = _tableClient.Query<EntityState>(ent => ent.PartitionKey == partitionKey);
+            var queryResultsLINQ = _tableClient.Query<EntityStateRecord>(ent => ent.PartitionKey == partitionKey);
 
             return queryResultsLINQ?.ToList();
         }
@@ -144,7 +144,7 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
         /// <returns></returns>
         public IBaseTableEntity GetEntityMapping(string partitionKey, string rowKey)
         {
-            var queryResultsLINQ = _tableClient.Query<EntityState>(filter: ent => ent.PartitionKey == partitionKey && ent.RowKey == rowKey);
+            var queryResultsLINQ = _tableClient.Query<EntityStateRecord>(filter: ent => ent.PartitionKey == partitionKey && ent.RowKey == rowKey);
 
             return queryResultsLINQ.FirstOrDefault();
         }
@@ -182,6 +182,5 @@ namespace Microsoft.Teams.EmbeddedChat.Utils
             // Add the newly created entity.
             await _tableClient.DeleteEntityAsync(partitionKey, rowKey);
         }
-
     }
 }

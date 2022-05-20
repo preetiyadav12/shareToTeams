@@ -64,12 +64,15 @@ namespace Microsoft.Teams.EmbeddedChat
                 return new NotFoundResult();
 
             if (!completeResponseData.IsSuccess)
-                return new ContentResult
+            {
+                var content = new ContentResult
                 {
-                    Content = completeResponseData.RowKey,
+                    Content = completeResponseData.Owner.UserPrincipalName,
                     ContentType = "application/json",
-                    StatusCode = (int)HttpStatusCode.Forbidden
+                    StatusCode = (int)HttpStatusCode.InternalServerError
                 };
+                return new OkObjectResult(content);
+            }
 
             return new OkObjectResult(completeResponseData);
         }

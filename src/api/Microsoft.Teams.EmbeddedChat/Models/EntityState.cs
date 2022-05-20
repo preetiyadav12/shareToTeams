@@ -7,7 +7,7 @@ namespace Microsoft.Teams.EmbeddedChat.Models
     /// <summary>
     /// Class for EntityState.
     /// </summary>
-    public class EntityState : IBaseTableEntity
+    public class EntityState : BaseModel
     {
         public string EntityId { get; set; }
         public Person Owner { get; set; }

@@ -30,7 +30,7 @@ namespace Microsoft.Teams.EmbeddedChat
         public const string GetNotCompletedFlows = "GetNotCompletedFlows";
 
         // Execution timeout and retry
-        public const int Timeout = 30;
+        public const int Timeout = 300;
         public const int RetryInterval = 1;
     }
 }

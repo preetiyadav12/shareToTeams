@@ -54,7 +54,6 @@ export class EmbeddedChat {
     }
 
     console.log(`User Id: ${authResult.uniqueId}`);
-    console.log(`User email: ${authResult.account.username}`);
     console.log(`Graph Token: ${authResult.accessToken}`);
     console.log(`Id Token: ${authResult.idToken}`);
     console.log(`Token Expires On: ${authResult.expiresOn}`);
@@ -115,19 +114,12 @@ export class EmbeddedChat {
           // Hide the waiting indicator
           this.waiting.hide();
 
-          console.log(`Entity Id: ${entityState.entityId}`);
-          console.log(`Thread Id: ${entityState.chatInfo.threadId}`);
-          console.log(`ACS User Id: ${entityState.acsInfo.acsUserId}`);
-          console.log(`ACS Token: ${entityState.acsInfo.acsToken}`);
+          console.log(`Entity State: ${entityState}`);
 
           // // initialize the ACS Client
           console.log("Initializing ACS Client...");
           this.creds = new AzureCommunicationTokenCredential(entityState.acsInfo.acsToken!);
           this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
-
-          console.log("Successfully initialized ACS Chat Client!");
-          const threads = this.chatClient.listChatThreads();
-          console.log(`Total of chat threads for this user is: ${threads?.byPage.length}`);
 
           await this.chatClient.startRealtimeNotifications();
 

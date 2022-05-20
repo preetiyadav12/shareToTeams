@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Teams.EmbeddedChat.ACS;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         }
 
         /// <summary>
-        /// The Activity to get the Entity State
+        /// The Activity to get the list of Entity States
         /// </summary>
         /// <param name="context"></param>
         /// <param name="log"></param>
@@ -30,6 +31,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         [FunctionName(Constants.GetEntityStateActivity)]
         public IEnumerable<EntityState> GetEntityStateAsync([ActivityTrigger] IDurableActivityContext context, ILogger log)
         {
+            List<EntityState> entityStates = new List<EntityState>();
+
             // retrieves the entity state from the orchestration
             var requestData = context.GetInput<ChatInfoRequest>();
 
@@ -38,10 +41,26 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             try
             {
                 // Construct a new "TableServiceClient using a connection string.
-                var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
+                var tableService = new AzureDataTablesService<EntityStateRecord>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
                 // return all the entities for the particular Entity Id
-                return (IEnumerable<EntityState>) tableService.GetEntities(requestData.EntityId);
+                var entityRecords = (IEnumerable<EntityStateRecord>) tableService.GetEntities(requestData.EntityId);
+                foreach (var record in entityRecords)
+                {
+                    entityStates.Add(new EntityState
+                    {
+                        Id = record.Id,
+                        EntityId = record.EntityId,
+                        IsSuccess = record.IsSuccess,
+                        Owner = JsonConvert.DeserializeObject<Person>(record.Owner),
+                        Participants = JsonConvert.DeserializeObject<Person[]>(record.Participants) ?? new List<Person>().ToArray(),
+                        ChatInfo = JsonConvert.DeserializeObject<ChatInfo>(record.ChatInfo),
+                        AcsInfo = JsonConvert.DeserializeObject<ACSInfo>(record.AcsInfo),
+                        CorrelationId = record.CorrelationId
+                    });
+                }
+
+                return entityStates;
             }
             catch (System.Exception e)
             {
@@ -72,14 +91,26 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
 
             try
             {
-                if (string.IsNullOrEmpty(entityState.PartitionKey) || string.IsNullOrEmpty(entityState.RowKey))
-                    throw new System.Exception("One of the entity state primary keys is emtpy!");
+                // Convert (serialize) the complex types into their JSON representation before writting into the storage
+                var entityRecord = new EntityStateRecord
+                {
+                    PartitionKey = entityState.EntityId,
+                    RowKey = entityState.Owner.Id,
+                    EntityId = entityState.EntityId,
+                    IsSuccess = entityState.IsSuccess,
+                    Owner = JsonConvert.SerializeObject(entityState.Owner),
+                    ChatInfo = JsonConvert.SerializeObject(entityState.ChatInfo),
+                    AcsInfo = JsonConvert.SerializeObject(entityState.AcsInfo),
+                    Participants = JsonConvert.SerializeObject(entityState.Participants),
+                    CorrelationId = entityState.CorrelationId
+                };
 
                 // Construct a new "TableServiceClient using a connection string.
-                var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
+                var tableService = new AzureDataTablesService<EntityStateRecord>(
+                    _appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
                 // add a new Entity into the state
-                await tableService.AddEntityAsync(entityState);
+                await tableService.AddEntityAsync(entityRecord);
 
                 return true;
             }
@@ -107,7 +138,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             try
             {
                 // Construct a new "TableServiceClient using a connection string.
-                var tableService = new AzureDataTablesService<EntityState>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
+                var tableService = new AzureDataTablesService<EntityStateRecord>(
+                    _appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
 
                 if (entityState.AcsInfo.AcsToken == null)
                 {
@@ -121,8 +153,22 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                     entityState.AcsInfo.TokenExpiresOn = accessToken.ExpiresOn.ToString("F");
                 }
 
+                // Convert (serialize) the complex types into their JSON representation before writting into the storage
+                var entityRecord = new EntityStateRecord
+                {
+                    PartitionKey = entityState.EntityId,
+                    RowKey = entityState.Owner.Id,
+                    EntityId = entityState.EntityId,
+                    IsSuccess = entityState.IsSuccess,
+                    Owner = JsonConvert.SerializeObject(entityState.Owner),
+                    ChatInfo = JsonConvert.SerializeObject(entityState.ChatInfo),
+                    AcsInfo = JsonConvert.SerializeObject(entityState.AcsInfo),
+                    Participants = JsonConvert.SerializeObject(entityState.Participants),
+                    CorrelationId = entityState.CorrelationId
+                };
+
                 // update the existing entity state with the updated data
-                await tableService.UpdateEntityAsync(entityState);
+                await tableService.UpdateEntityAsync(entityRecord);
 
                 return (true, entityState);
             }
