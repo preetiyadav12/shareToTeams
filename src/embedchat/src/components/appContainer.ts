@@ -80,7 +80,7 @@ export class AppContainer extends HTMLElement {
         this.render();
     }
 
-    mentionSelected = (selectedIndex: number) => {
+    atMentionSelected = (selectedIndex: number) => {
         const selectedUser = this.mentionResults[selectedIndex];
         const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"));
         const atMentionHtml = `<readonly class="teams-embed-mention-user" contenteditable="false" userId="${selectedUser.id}">${selectedUser.displayName}</readonly>&ZeroWidthSpace;`;
@@ -99,7 +99,7 @@ export class AppContainer extends HTMLElement {
         this.mentionResults = [];
         results.forEach((person: Person, i: number) => {                
             this.mentionResults.push(person);
-            const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
+            const peopleItem = new PeopleItem(person, i, this.atMentionSelected.bind(this, i));
             mentionContainer.appendChild(peopleItem);
         });
 
@@ -111,7 +111,7 @@ export class AppContainer extends HTMLElement {
         (<HTMLElement>document.querySelector(".teams-embed-input-mention-container")).style.display = "none";
     }
 
-    atMention = (evt: KeyboardEvent) => {
+    createAtMention = (evt: KeyboardEvent) => {
         // close mention results window if hit escape
         if (evt.key == "Escape") {
             this.clearMentionContainer();
@@ -156,6 +156,15 @@ export class AppContainer extends HTMLElement {
         }
     }
 
+    sendMessage = () => {
+        const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"))
+        const chatItem = new ChatItem(input.innerHTML);
+        const chatItems = (<HTMLElement>document.querySelector(".teams-embed-chat-items"));
+        chatItems.appendChild(chatItem);
+        chatItems.scrollTop = chatItems.scrollHeight;
+        input.innerHTML = "";
+    }
+
     render = () => {
         // get the template
         const dom = <HTMLElement>template.content.cloneNode(true);
@@ -188,21 +197,17 @@ export class AppContainer extends HTMLElement {
 
         // wire event to sent message
         (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
-            // TODO: send the message
+            this.sendMessage();
         });
         
         // wire event to send message on ENTER
         (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
-            // TODO: send the message if Enter pressed
-            console.log(e.key);
-
             if (e.key == "Enter") {
-                const chatItem = new ChatItem();
-                (<HTMLElement>dom.querySelector(".teams-embed-chat-items")).appendChild(chatItem);
+                this.sendMessage();
             }
 
             // handle at mention
-            this.atMention(e);
+            this.createAtMention(e);
         });
 
         this.appendChild(dom);

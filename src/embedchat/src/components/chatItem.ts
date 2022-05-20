@@ -14,16 +14,17 @@ template.innerHTML = `
                     <span class="teams-embed-chat-message-author">Jane Doe</span>
                     <span class="teams-embed-chat-message-timestamp">Yesterday, 4:15 PM</span>
                 </div>
-                <div class="teams-embed-chat-message-content">Hi, this is my first message</div>
+                <div class="teams-embed-chat-message-content"></div>
             </div>
         </div>
     </li>`;
 
 export class ChatItem extends HTMLElement {
-    constructor()  {
+    constructor(message: string)  {
         super();
 
         const dom = <HTMLElement>template.content.cloneNode(true);
+        (<HTMLElement>dom.querySelector(".teams-embed-chat-message-content")).innerHTML = message;
         this.appendChild(dom);
     }
 
