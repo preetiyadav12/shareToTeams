@@ -12,7 +12,7 @@ export class EntityApi {
     console.log(`API Base Url: ${this.config.apiBaseUrl}`);
   }
 
-  public getMapping = async (chatInfoRequest: ChatInfoRequest): Promise<EntityState | null> => {
+  public getMapping = async (chatInfoRequest: ChatInfoRequest): Promise<EntityState | any> => {
     if (!chatInfoRequest) {
       throw new Error("Entity Id cannot be emtpy!");
     }
@@ -30,8 +30,14 @@ export class EntityApi {
 
     console.log(resp);
     if (resp.ok) {
-      const data = (await resp.json()) as EntityState;
-      return data;
+      if (resp.status === 200) {
+        const data = (await resp.json()) as EntityState;
+        return data;
+      } else if (resp.status === 500) {
+        const data = await resp.json();
+        console.log(data.Content);
+        return null;
+      }
     } else {
       if (resp.status === 404) {
         // Entity is not found
@@ -52,11 +58,20 @@ export class EntityApi {
       body: JSON.stringify(chatInfoRequest),
     };
 
-    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/create`, requestOptions);
+    try {
+      const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/create`, requestOptions);
 
-    if (resp.ok) {
-      return await resp.json();
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (error) {
+      const err = error as Error;
+      if (err) {
+        console.log(err.message);
+      }
+      throw error;
     }
+
     return null;
   };
 }

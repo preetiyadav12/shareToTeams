@@ -121,8 +121,9 @@ namespace Microsoft.Teams.EmbeddedChat
                         Owner = requestData.Owner,
                         ChatInfo = chatInfo,
                         AcsInfo = acsInfo,
+                        Participants = requestData.Participants,
                         CorrelationId = requestData.CorrelationId,
-                        IsSuccess = false
+                        IsSuccess = true
                     };
 
                     if (!context.IsReplaying)
