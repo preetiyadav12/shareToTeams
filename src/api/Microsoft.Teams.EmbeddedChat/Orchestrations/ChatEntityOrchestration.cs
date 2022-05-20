@@ -45,8 +45,6 @@ namespace Microsoft.Teams.EmbeddedChat
 
                     if (entities.Any())
                     {
-                        // Get the updated list of participants for each entity
-                        // TODO
                         // for each entity get the participant list and update state
                         // 1. foreach entity begin
                         // 2.  call getParticipantsActivity passing entity's chatInfo
@@ -56,54 +54,51 @@ namespace Microsoft.Teams.EmbeddedChat
                         // 6. end foreach loop
                         foreach (var entity in entities)    
                         {
-                            entity.Participants = await context.CallActivityAsync<(Participant[])>(Constants.GetParticipantsActivity, requestData);
-
-                            var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, requestData);
-                            if (updateStatus == false)
+                            var meetingRequest = new MeetingRequest
                             {
-                                log.LogError($"Failed to update the entity with Id: {requestData.EntityId}");
-                                return null;
-                            }
-                        }
-                       
+                                MeetingId = entity.ChatInfo.MeetingId,
+                                MeetingOwnerId = requestData.Owner.Id,
+                                Token = requestData.accessToken
+                            };
 
-                        var updatedEntities = entities;
+                            var participants = await context.CallActivityAsync<Person[]>(Constants.GetParticipantsActivity, meetingRequest);
 
-                        // at least one entity mapping found
-                        // now we'll check if this user was the owner of one of the entities in the list
-                        var entityState = updatedEntities.FirstOrDefault(
-                            e => e.Participants.Any(p => p.Id == requestData.Owner.Id));
-
-                        if (entityState != null) // This user is one of the participants in this entity chat!
-                        {
-                            // If the ACS Token has expired, we'll refresh it and then update the state
-                            if (DateTime.Parse(entityState.AcsInfo.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
+                            if (participants.Any(p => p.Id == requestData.Owner.Id) || entity.Owner.Id == requestData.Owner.Id)
                             {
-                                log.LogWarning("ACS Token has expired. Refreshing the token and returning the updated state...");
-                                // invalidate the current expired token
-                                entityState.AcsInfo.AcsToken = null;
+                                if (!ParticipantsEqual(entity.Participants, participants)) {
+                                    // the new list of participants is different from the source
+                                    // then, we'll update the entity state
+                                    entity.Participants = participants;
 
-                                // update the entity state while refreshing the token
-                                var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, entityState);
-                                if (updateStatus == false)
-                                {
-                                    log.LogError($"Failed to update the entity with Id: {requestData.EntityId}");
-                                    return null;
+                                    // If the ACS Token has expired, we'll refresh it and then update the state
+                                    if (DateTime.Parse(entity.AcsInfo.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
+                                    {
+                                        log.LogWarning("ACS Token has expired. Refreshing the token and returning the updated state...");
+                                        // invalidate the current expired token
+                                        entity.AcsInfo.AcsToken = null;
+                                    }
+
+                                    var (updateStatus, updatedState) =
+                                        await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, entity);
+                                    if (updateStatus == false)
+                                    {
+                                        log.LogError($"Failed to update the entity with Id: {requestData.EntityId}");
+                                        return null;
+                                    }
+
+                                    if (!context.IsReplaying)
+                                    {
+                                        log.LogWarning($"{Constants.UpdateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
+                                    }
+
+                                    // Mark the updated state as successful
+                                    updatedState.IsSuccess = true;
+
+                                    return updatedState;
                                 }
 
-                                // update the entity state returning to the caller
-                                entityState = updatedState;
-
-                                if (!context.IsReplaying)
-                                {
-                                    log.LogWarning($"{Constants.UpdateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
-                                }
+                                return entity;
                             }
-
-                            // Update the entity response status
-                            entityState.IsSuccess = true;
-
-                            return entityState;
                         }
 
                         // None of the entities contain this user as the participant
@@ -171,6 +166,17 @@ namespace Microsoft.Teams.EmbeddedChat
             }
 
             return null;
+        }
+
+        private bool ParticipantsEqual(Person[] source, Person[] target)
+        {
+            foreach (var person in source)
+            {
+                if (target.Any(p => p.Id != person.Id))
+                    return false;
+            }
+
+            return target.Count() == source.Count();
         }
     }
 }

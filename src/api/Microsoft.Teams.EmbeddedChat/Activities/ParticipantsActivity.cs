@@ -33,33 +33,25 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         {
 
             // retrieves the entity state from the orchestration
-            var requestData = context.GetInput<ChatInfoRequest>();
+            var meetingRequest = context.GetInput<MeetingRequest>();
 
 
             // Create a Graph Service client
-            var graphClient = new GraphService(requestData.accessToken, log);
+            var graphClient = new GraphService(meetingRequest.Token, log);
 
             // Initialize the graph client
             graphClient.GetGraphServiceClient();
 
 
+            // Create a new online meeting
+            var participants = await graphClient.GetParticipantsListAsync(meetingRequest);
 
-            // var mtgId = "MSo5MmIyOTUzYy02ZDFiLTQxZWMtOGJkZi1kODQ4MWFkMzM1MWUqMCoqMTk6bWVldGluZ19ZV0UwWldNeFkyUXRZVEppT1MwME5EWTRMV0ZoTWpFdFkyVmpaak00TnpoaU1HUXhAdGhyZWFkLnYy";
 
-            //Call Graph to get the participant data
-            //var onlineMeeting = await graphClient.
-
-       
-
-            log.LogInformation($"Activity {Constants.GetParticipantsActivity} has started.");
-
-            return (true, result); //for debug reasons
+            log.LogInformation($"Successfully retrieved the latest list of participants for the meeting with meeting Id: {meetingRequest.MeetingId}");
+ 
+            // Return the custom Chat Info entity
+            return participants;
         }
 
-        [FunctionName(Constants.UpdateParticipantsActivity)]
-        public async Task<(bool updateStatus, EntityState updatedState)> UpdateParticipantsActivity([ActivityTrigger] IDurableActivityContext context, ILogger log)
-        {
-
-        }
     }
 }
