@@ -66,7 +66,7 @@ namespace Microsoft.Teams.EmbeddedChat
             if (!completeResponseData.IsSuccess)
                 return new ContentResult
                 {
-                    Content = completeResponseData.RowKey,
+                    Content = completeResponseData.Owner.UserPrincipalName,
                     ContentType = "application/json",
                     StatusCode = (int)HttpStatusCode.Forbidden
                 };
