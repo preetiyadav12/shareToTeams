@@ -52,17 +52,19 @@ namespace Microsoft.Teams.EmbeddedChat
                         // at least one entity mapping found
                         // now we'll check if this user was the owner of one of the entities in the list
                         var entityState = updatedEntities.FirstOrDefault(
-                            e => e.Participants.Any(p => p.Username == requestData.Username));
+                            e => e.Participants.Any(p => p.Id == requestData.Owner.Id));
 
                         if (entityState != null) // This user is one of the participants in this entity chat!
                         {
                             // If the ACS Token has expired, we'll refresh it and then update the state
-                            if (DateTime.Parse(entityState.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
+                            if (DateTime.Parse(entityState.AcsInfo.TokenExpiresOn).CompareTo(context.CurrentUtcDateTime) < 0)
                             {
                                 log.LogWarning("ACS Token has expired. Refreshing the token and returning the updated state...");
+                                // invalidate the current expired token
+                                entityState.AcsInfo.AcsToken = null;
 
-                                // update the entity state with the refreshed token
-                                var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, requestData);
+                                // update the entity state while refreshing the token
+                                var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, entityState);
                                 if (updateStatus == false)
                                 {
                                     log.LogError($"Failed to update the entity with Id: {requestData.EntityId}");
@@ -103,20 +105,38 @@ namespace Microsoft.Teams.EmbeddedChat
                 // Create Entity
                 case ApiOperation.CreateEntityState:
 
-                    // Create a new Online Meeting and get the Thread Id
-                    requestData.ThreadId = await context.CallActivityAsync<string>(Constants.CreateOnlineMeetingActivity,
-                        requestData);
+                    // 1. Create a new entity state object and initialize it 
+                    // 2. Create a new Online Meeting and get the Thread Id
+                    // 3. create a new ACS Client and fill the info to the entity state
+                    var newState = new EntityState
+                    {
+                        PartitionKey = requestData.EntityId,
+                        RowKey = requestData.Owner.Id,
+                        EntityId = requestData.EntityId,
+                        Owner = requestData.Owner,
+                        ChatInfo = await context.CallActivityAsync<ChatInfo>(Constants.CreateOnlineMeeting, requestData),
+                        AcsInfo = await context.CallActivityAsync<ACSInfo>(Constants.CreateACSClientActivity, null),
+                        CorrelationId = requestData.CorrelationId,
+                        IsSuccess = false
+                    };
 
-                    // create a new entity state and save it in the durable storage
-                    var newState = await context.CallActivityAsync<EntityState>(Constants.CreateEntityStateActivity,
-                        requestData);
+                    if (!context.IsReplaying)
+                    {
+                        log.LogWarning($"{Constants.CreateACSClientActivity} Activity completed for the entity id {requestData.EntityId}.");
+                    }
+
+                    // Save the entity state to the durable storage
+                    if (!await context.CallActivityAsync<bool>(Constants.CreateEntityStateActivity, newState))
+                    {
+                        log.LogWarning($"{Constants.CreateEntityStateActivity} Activity failed to create a new Entity State for the entity id {requestData.EntityId}.");
+                        return null;
+                    }
 
                     if (!context.IsReplaying)
                     {
                         log.LogWarning($"{Constants.CreateEntityStateActivity} Activity completed for the entity id {requestData.EntityId}.");
                     }
 
-                    // update the entity state returning to the caller
                     return newState;
 
                 default:

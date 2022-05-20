@@ -1,11 +1,11 @@
 import { BaseModel } from "./base-model";
-import { Participant } from "./participant";
+import { Person } from "./person";
 
 export interface ChatInfoRequest extends BaseModel {
   entityId: string;
-  userName: string;
+  owner: Person;
   accessToken: string;
   topic: string;
   threadId?: string;
-  participants?: Participant[];
+  participants?: Person[];
 }

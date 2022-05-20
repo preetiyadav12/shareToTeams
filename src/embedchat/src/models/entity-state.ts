@@ -1,12 +1,9 @@
-import { BaseModel } from "./base-model";
-import { Participant } from "./participant";
+import { ACSInfo, BaseModel, ChatInfo, Person } from "./";
 
 export interface EntityState extends BaseModel {
   entityId: string;
-  owner: string;
-  threadId: string;
-  acsUserId: string;
-  acsToken: string;
-  tokenExpiresOn: string;
-  participants: Participant[];
+  owner: Person;
+  chatInfo: ChatInfo;
+  acsInfo: ACSInfo;
+  participants: Person[];
 }

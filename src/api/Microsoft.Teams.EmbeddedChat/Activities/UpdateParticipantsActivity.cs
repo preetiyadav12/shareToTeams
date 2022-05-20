@@ -23,11 +23,11 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <param name="log"></param>
         /// <returns></returns>
         [FunctionName(Constants.UpdateParticipantsActivity)]
-        public IEnumerable<Participant> UpdateParticipantsAsync(
+        public IEnumerable<Person> UpdateParticipantsAsync(
             [ActivityTrigger] IDurableActivityContext context, ILogger log)
         {
             // retrieves the entity state from the orchestration
-            var participants = context.GetInput<IEnumerable<Participant>>();
+            var participants = context.GetInput<IEnumerable<Person>>();
 
             log.LogInformation($"Activity {Constants.UpdateParticipantsActivity} has started.");
 

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Teams.EmbeddedChat.Models;
+using System;
 
 namespace Microsoft.Teams.EmbeddedChat.APIs
 {
@@ -31,7 +32,9 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
             [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
+
             log.LogInformation($"Started new {Constants.GetEntityAPIHttpPost} flow.");
+
 
             var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
@@ -56,6 +59,9 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
 
             var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
+
+            // extract access token from the header
+            requestData.accessToken = request.Headers.Authorization.Parameter;
 
             return await _processing.ProcessFlow(ParseOperation(request), requestData, request, client);
         }

@@ -1,4 +1,9 @@
+import { PhotoUtil } from "../api/photoUtil";
+import { AuthInfo } from "src/models";
+import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
+import { Person } from "../models/person";
+import { ParticipantList } from "./participantList";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -53,29 +58,105 @@ template.innerHTML = `
     </div>`;
 
 export class AppContainer extends HTMLElement {
-    private chatTitle:string;
-    constructor(chatTitle: string)  {
+    private chatTitle: string;
+    private authInfo: AuthInfo;
+    private photoUtil: PhotoUtil;
+    private dialog:AddParticipantDialog;
+    private participantList?:ParticipantList;
+    constructor(chatTitle: string, authInfo: AuthInfo) {
         super();
         this.chatTitle = chatTitle;
+        this.authInfo = authInfo;
+        this.photoUtil = new PhotoUtil();
+        this.dialog =  new AddParticipantDialog(this.authInfo, this.photoUtil);
         this.render();
     }
 
     render = () => {
+        // get the template
         const dom = <HTMLElement>template.content.cloneNode(true);
+    
+        // set chat title
         (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
-        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
-            // TODO: append the participant list here
+    
+        // TODO: get participants
+        const participantList = getPartipicipants("");
+
+        // set participant count in header
+        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML = participantList.length.toString();
+    
+        // add the participants list
+        this.participantList = createParticipantList(participantList, () => {
+            if (this.participantList)
+                this.participantList.hide();
+            this.dialog.show(true);
         });
+        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.participantList);
+
+        // add the add participant dialog
+        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.dialog);
+
+        // wire even to toggle participant list
+        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
+            if (this.participantList)
+                this.participantList.toggle();
+        });
+
+        // wire event to sent message
         (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
             // TODO: send the message
         });
+        
+        // wire event to send message on ENTER
         (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
             // TODO: send the message if Enter pressed
             console.log(e.key);
         });
 
         this.appendChild(dom);
-    }
+    };
+}
+
+function createParticipantList(participantList: Person[], callback: any) {
+  //todo:retrieve participantlist from entitystate
+
+  const pList = new ParticipantList(participantList, callback);
+  return pList;
+}
+
+function getPartipicipants(entityId: string) {
+  const personList = [];
+
+  const person1: Person = {
+    id: "1",
+    displayName: "Emily Braun",
+    userPrincipalName: "a@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  const person2: Person = {
+    id: "2",
+    displayName: "Isaiah Langer",
+    userPrincipalName: "b@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  const person3: Person = {
+    id: "3",
+    displayName: "Enrico Cattaneo",
+    userPrincipalName: "c@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  const person4: Person = {
+    id: "4",
+    displayName: "Patti Fernandez",
+    userPrincipalName: "d@b.c",
+    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
+  };
+  personList.push(person1);
+  personList.push(person2);
+  personList.push(person3);
+  personList.push(person4);
+
+  return personList;
 }
 
 customElements.define("app-container", AppContainer);

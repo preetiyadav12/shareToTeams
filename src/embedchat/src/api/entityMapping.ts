@@ -36,14 +36,14 @@ export class EntityApi {
     } else {
       if (resp.status === 404) {
         // Entity is not found
-        alert(`No entity mapping found for this entity: ${chatInfoRequest.entityId}`);
+        console.log(`No entity mapping found for this entity: ${chatInfoRequest.entityId}`);
         return null;
       }
       throw new Error(resp.statusText);
     }
   };
 
-  public createChat = async (chatInfoRequest: ChatInfoRequest): Promise<boolean> => {
+  public createChat = async (chatInfoRequest: ChatInfoRequest): Promise<EntityState | null> => {
     const requestOptions = {
       method: "POST",
       headers: new Headers({
@@ -55,6 +55,9 @@ export class EntityApi {
 
     const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/create`, requestOptions);
 
-    return resp.ok;
+    if (resp.ok) {
+      return await resp.json();
+    }
+    return null;
   };
 }

@@ -18,7 +18,8 @@ namespace Microsoft.Teams.EmbeddedChat
         public const string CreateEntityStateActivity = "CreateEntityState";
         public const string UpdateEntityStateActivity = "UpdateEntityState";
         public const string UpdateParticipantsActivity = "UpdateParticipants";
-        public const string CreateOnlineMeetingActivity = "CreateOnlineMeeting";
+        public const string CreateOnlineMeeting = "CreateOnlineMeeting";
+        public const string CreateACSClientActivity = "CreateAcsClient";
 
         // Diagnostics API
         public const string GetOrchestrationStatus = "GetStatus";
