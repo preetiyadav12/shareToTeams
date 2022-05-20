@@ -67,7 +67,6 @@ export class AppContainer extends HTMLElement {
     private mentionResults: Person[];
     private mentionInput: string;
     private personList: Person[];
-    private atMentionList: Person[];
     constructor(chatTitle: string, authInfo: AuthInfo) {
         super();
         this.chatTitle = chatTitle;
@@ -77,13 +76,11 @@ export class AppContainer extends HTMLElement {
         this.mentionResults = [];
         this.mentionInput = "";
         this.personList = [];
-        this.atMentionList = [];
         this.render();
     }
 
     mentionSelected = (selectedIndex: number) => {
         const selectedUser = this.mentionResults[selectedIndex];
-        this.atMentionList.push(selectedUser);
         const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"));
         const atMentionHtml = `<readonly class="teams-embed-mention-user" contenteditable="false" userId="${selectedUser.id}">${selectedUser.displayName}</readonly>&ZeroWidthSpace;`;
         const inputHtml = input.innerHTML.replace("@"+this.mentionInput, atMentionHtml);
@@ -140,10 +137,16 @@ export class AppContainer extends HTMLElement {
                 return;
             }
 
-            this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trim().replaceAll(" ", "");
+            this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trimEnd();
             
+            const results: Person[] = [];
             // filter
-            const results = this.personList.filter(person => person.displayName.toLowerCase().replaceAll(" ", "").startsWith(this.mentionInput));
+            for (let i = 0; i < this.personList.length; i++) {
+                if (this.personList[i].displayName.toLowerCase().indexOf(this.mentionInput) > -1) {
+                    results.push(this.personList[i]);
+                }
+            }
+
             if (results.length == 0) {
                 this.clearMentionContainer();
                 return;
