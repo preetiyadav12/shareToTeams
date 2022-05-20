@@ -161,7 +161,8 @@ export class AppContainer extends HTMLElement {
         const chatItem = new ChatItem(input.innerHTML);
         const chatItems = (<HTMLElement>document.querySelector(".teams-embed-chat-items"));
         chatItems.appendChild(chatItem);
-        chatItems.scrollTop = chatItems.scrollHeight;
+        const chatContainer = (<HTMLElement>document.querySelector(".teams-embed-chat"))
+        chatContainer.scrollTop = chatContainer.scrollHeight;
         input.innerHTML = "";
     }
 
