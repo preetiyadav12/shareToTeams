@@ -151,19 +151,34 @@ export class EmbeddedChat {
     const meetingCall = callAgent.join(locator);
 
     // load the existing thread messages if this is an existing chat
+    const messages: Message[] = [];
     if (!isNew)
     {
-      const messages: Message[] = [];
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.chatInfo.threadId);
       console.log(chatThreadClient);
       for await (const chatMessage of chatThreadClient.listMessages()) {
         console.log(chatMessage);
+        if (chatMessage.type == "html") {
+          messages.push({
+            id: chatMessage.id,
+            message: (<any>chatMessage).content.message,
+            sender: {
+              id: (<any>chatMessage).sender.microsoftTeamsUserId,
+              displayName: chatMessage.senderDisplayName!,
+              photo: ""
+            },
+            threadId: entityState.chatInfo.threadId,
+            type: chatMessage.type,
+            version: chatMessage.version,
+            createdOn: chatMessage.createdOn
+          });
+        }
       }
       console.log(messages);
     }
 
     // inert the appComponent
-    const appComponent:AppContainer = new AppContainer("Hello World", this.authResult!);
+    const appComponent:AppContainer = new AppContainer(messages, "Hello World", this.authResult!);
     element.appendChild(appComponent);
 
     //hide waiting indicator to show UI
