@@ -47,6 +47,26 @@ namespace Microsoft.Teams.EmbeddedChat
                     {
                         // Get the updated list of participants for each entity
                         // TODO
+                        // for each entity get the participant list and update state
+                        // 1. foreach entity begin
+                        // 2.  call getParticipantsActivity passing entity's chatInfo
+                        // 3. getParticipantsActivity returns the updated list of participants
+                        // 4. assign the new participants list to the entity's participants property
+                        // 5. call UpdateEntityStateActivity passing the current entity (with updated participants list)
+                        // 6. end foreach loop
+                        foreach (var entity in entities)    
+                        {
+                            entity.Participants = await context.CallActivityAsync<(Participant[])>(Constants.GetParticipantsActivity, requestData);
+
+                            var (updateStatus, updatedState) = await context.CallActivityAsync<(bool, EntityState)>(Constants.UpdateEntityStateActivity, requestData);
+                            if (updateStatus == false)
+                            {
+                                log.LogError($"Failed to update the entity with Id: {requestData.EntityId}");
+                                return null;
+                            }
+                        }
+                       
+
                         var updatedEntities = entities;
 
                         // at least one entity mapping found
