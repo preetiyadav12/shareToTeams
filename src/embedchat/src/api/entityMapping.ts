@@ -1,6 +1,5 @@
-import { ChatInfoRequest } from "src/models/chat-info-request";
 import { AppSettings } from "../config/appSettings";
-import { EntityState } from "../models/entity-state";
+import { ChatInfoRequest, EntityState } from "../models";
 
 export class EntityApi {
   private readonly config: AppSettings;

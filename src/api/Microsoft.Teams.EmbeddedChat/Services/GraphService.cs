@@ -24,6 +24,8 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         private readonly string userToken;
 
         private GraphServiceClient _graphServiceClient;
+
+
         /// <summary>
         /// Constructor: create graph service client 
         /// </summary>
@@ -64,6 +66,8 @@ namespace Microsoft.Teams.EmbeddedChat.Services
                 .WithAuthority($"https://login.microsoftonline.com/{tenantId}")
                 .Build();
         }
+
+
         /// <summary>
         /// create GraphServiceClient
         /// </summary>
@@ -110,7 +114,7 @@ namespace Microsoft.Teams.EmbeddedChat.Services
 
 
         /// <summary>
-        /// 
+        /// Create a new Online Meeting
         /// </summary>
         /// <param name="requestData"></param>
         /// <returns></returns>
@@ -163,9 +167,8 @@ namespace Microsoft.Teams.EmbeddedChat.Services
             catch (Exception ex)
             {
                 log.LogError(ex.Message);
+                throw;
             }
-
-            return null;
         }
     }
 }
