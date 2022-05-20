@@ -50,7 +50,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             return new Models.ChatInfo
             {
                 MeetingId = onlineMeeting.Id,
-                ThreadId = onlineMeeting.ChatInfo.ThreadId
+                ThreadId = onlineMeeting.ChatInfo.ThreadId,
+                JoinUrl = onlineMeeting.JoinWebUrl
             };
         }
     }

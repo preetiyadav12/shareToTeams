@@ -17,6 +17,14 @@
   dependencies:
     tslib "^2.2.0"
 
+"@azure/communication-calling@1.4.4":
+  version "1.4.4"
+  resolved "https://registry.yarnpkg.com/@azure/communication-calling/-/communication-calling-1.4.4.tgz#c5515b0d9797dc6984247c6cd7a58ffa8befb160"
+  integrity sha512-uWzULqnXB7pMIEH8x1mwwT45ncPfAryfoKxd4BtbcL1C3ckMknk/5gP3Ov2/V5DJkoOO3I6A4D1n05eSFRy+zA==
+  dependencies:
+    "@azure/communication-common" "^1.0.0"
+    "@azure/logger" "^1.0.2"
+
 "@azure/communication-chat@1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@azure/communication-chat/-/communication-chat-1.1.0.tgz#a2c094172675c061b3c5f8547d2582a7fe8466fb"
@@ -35,7 +43,7 @@
     tslib "^2.2.0"
     uuid "^8.3.0"
 
-"@azure/communication-common@1.1.0", "@azure/communication-common@^1.1.0":
+"@azure/communication-common@1.1.0", "@azure/communication-common@^1.0.0", "@azure/communication-common@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@azure/communication-common/-/communication-common-1.1.0.tgz#35cbff6577486e35faafe80963a2dbaf57faa423"
   integrity sha512-vqTtzDtb4NG3LWoWoqlOOJApZRRIIImNUKlGyTa6c1YC+v5A7UEOL9TX8NRDxvFVUF2wDHsSnkhLBVBgkcAhIQ==
@@ -161,7 +169,7 @@
   dependencies:
     tslib "^2.2.0"
 
-"@azure/logger@^1.0.0", "@azure/logger@~1.0.0":
+"@azure/logger@^1.0.0", "@azure/logger@^1.0.2", "@azure/logger@~1.0.0":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@azure/logger/-/logger-1.0.3.tgz#6e36704aa51be7d4a1bae24731ea580836293c96"
   integrity sha512-aK4s3Xxjrx3daZr3VylxejK3vG5ExXck5WOHDJ8in/k9AqlfIyFMMT1uG7u8mNjX+QRILTIn0/Xgschfh/dQ9g==

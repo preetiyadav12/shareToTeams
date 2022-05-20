@@ -5,6 +5,7 @@ namespace Microsoft.Teams.EmbeddedChat.Models
 	{
         public string MeetingId { get; set; }
         public string ThreadId { get; set; }
+        public string JoinUrl { get; set; }
     }
 }
 

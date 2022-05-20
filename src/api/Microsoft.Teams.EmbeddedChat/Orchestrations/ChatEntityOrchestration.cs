@@ -52,7 +52,7 @@ namespace Microsoft.Teams.EmbeddedChat
                         // at least one entity mapping found
                         // now we'll check if this user was the owner of one of the entities in the list
                         var entityState = updatedEntities.FirstOrDefault(
-                            e => e.Participants.Any(p => p.Id == requestData.Owner.Id));
+                            e => e.Participants.Any(p => p.Id == requestData.Owner.Id || e.Owner.Id == requestData.Owner.Id));
 
                         if (entityState != null) // This user is one of the participants in this entity chat!
                         {

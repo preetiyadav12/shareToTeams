@@ -36,8 +36,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             try
             {
                 // create ACS Communication Identity Client Service
-                var comClient = new CommServices(new Uri(_appConfiguration.AcsEndpoint),
-                    new[] { CommunicationTokenScope.Chat });
+                var comClient = new CommServices(_appConfiguration.AcsConnectionString,
+                    new[] { CommunicationTokenScope.Chat, CommunicationTokenScope.VoIP });
 
                 // Create user Id and ACS token
                 var acsInfo = await comClient.CreateIdentityAndGetTokenAsync();
