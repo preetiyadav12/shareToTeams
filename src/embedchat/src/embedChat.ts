@@ -8,6 +8,8 @@ import { PhotoUtil } from "./api/photoUtil";
 import { ButtonPage } from "./components/buttonPage";
 import { Waiting } from "./components/waiting";
 import { AppContainer } from "./components/appContainer";
+import { AddParticipantDialog } from "./components/addParticipantDialog";
+import { Person } from "./models/person";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
@@ -85,25 +87,16 @@ export class EmbeddedChat {
       // TODO: check autoStart value
       this.waiting.hide();
 
-      const appContainer:AppContainer = new AppContainer("Hello World", authResult);
-      element.append(appContainer);
-      /*
+      const photoUtil:PhotoUtil = new PhotoUtil();
+      const dialog:AddParticipantDialog = new AddParticipantDialog(authResult, photoUtil, (participants:Person[]) => {
+        // Start the chat
+        console.log(participants);
+      });
+      element.append(dialog);
       const btn = new ButtonPage("Start Teams Chat", async () => {
-        // this is a new thread...start it
-        console.log("Starting a new Chat thread...");
-        const chatRequest: CreateChatThreadRequest = {
-          topic: entityId,
-        };
-        if (this.chatClient) {
-          const chatThreadResult = await this.chatClient.createChatThread(chatRequest);
-
-          console.log(
-            `New Chat Thread was created for the topic: ${chatThreadResult.chatThread?.topic} and chat Id: ${chatThreadResult.chatThread?.id}`,
-          );
-        }
+        dialog.show(false);
       });
       element.append(btn);
-      */
     } else {
       // load the existing thread messages
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
