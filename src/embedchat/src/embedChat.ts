@@ -13,6 +13,7 @@ import { Waiting } from "./components/waiting";
 import { AddParticipantDialog } from "./components/addParticipantDialog";
 import { Person } from "./models/person";
 import { AppContainer } from "./components/appContainer";
+import { Message } from "./models/message";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
@@ -152,17 +153,11 @@ export class EmbeddedChat {
     // load the existing thread messages if this is an existing chat
     if (!isNew)
     {
-      const messages: CM[] = [];
+      const messages: Message[] = [];
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.chatInfo.threadId);
       console.log(chatThreadClient);
       for await (const chatMessage of chatThreadClient.listMessages()) {
-        messages.unshift(chatMessage);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (chatMessage.sender && !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const userId = (chatMessage.sender as any).microsoftTeamsUserId;
-          //this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
-        }
+        console.log(chatMessage);
       }
       console.log(messages);
     }
@@ -175,9 +170,24 @@ export class EmbeddedChat {
     this.waiting.hide();
 
     // listen for events
-    this.chatClient.on("chatMessageReceived", async (e) => {
+    this.chatClient.on("chatMessageReceived", async (e:any) => {
       console.log("TODO: chatMessageReceived");
       console.log(e);
+
+      // send the message to the appContainer
+      appComponent.messageReceived({
+        id: e.id,
+        message: e.message,
+        sender: {
+          id: e.sender.microsoftTeamsUserId,
+          displayName: e.senderDisplayName,
+          photo: ""
+        },
+        threadId: e.threadId,
+        type: e.type,
+        version: e.version,
+        createdOn: e.createdOn
+      });
     });
     this.chatClient.on("chatMessageEdited", async (e) => {
       console.log("TODO: chatMessageEdited");

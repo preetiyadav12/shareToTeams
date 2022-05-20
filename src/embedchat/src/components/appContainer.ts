@@ -4,6 +4,8 @@ import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
 import { Person } from "../models/person";
 import { ParticipantList } from "./participantList";
+import { Message } from "src/models/message";
+import { ChatItem } from "./chatItem";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -63,13 +65,26 @@ export class AppContainer extends HTMLElement {
     private photoUtil: PhotoUtil;
     private dialog:AddParticipantDialog;
     private participantList?:ParticipantList;
+    private messages:any[];
     constructor(chatTitle: string, authInfo: AuthInfo) {
         super();
         this.chatTitle = chatTitle;
         this.authInfo = authInfo;
         this.photoUtil = new PhotoUtil();
         this.dialog =  new AddParticipantDialog(this.authInfo, this.photoUtil);
+        this.messages = [];
         this.render();
+    }
+
+    messageReceived = async (message:Message) => {
+        message.sender.photo = this.photoUtil.emptyPic;
+        const chatItem:ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
+        await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, message.sender.id).then((pic:string) => {
+            message.sender.photo = pic;
+            chatItem.refresh(message);
+        });
+        this.messages.push(message);
+        const chatContainer = <HTMLElement>this.querySelector(".teams-embed-chat-items");
     }
 
     render = () => {
