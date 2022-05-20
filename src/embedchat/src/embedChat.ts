@@ -41,9 +41,12 @@ export class EmbeddedChat {
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
 
+    const app = new AppContainer();
+    element.appendChild(app);
+
     // add waiting indicator to UI and display it while we authenticate and check for mapping
     element.appendChild(this.waiting);
-    this.waiting.show();
+    //this.waiting.show();
     const authResult = await AuthUtil.acquireToken(element, this.appSettings, this.waiting);
     console.log(authResult);
     if (!authResult) {

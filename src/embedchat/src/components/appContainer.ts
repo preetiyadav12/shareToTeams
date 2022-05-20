@@ -5,6 +5,7 @@ import { ButtonPage } from "./buttonPage";
 import { Person } from "../models/person";
 import { ParticipantList } from "./participantList";
 import { PeopleItem } from "./peopleItem";
+import { ChatItem } from "./chatItem";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -194,6 +195,11 @@ export class AppContainer extends HTMLElement {
         (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
             // TODO: send the message if Enter pressed
             console.log(e.key);
+
+            if (e.key == "Enter") {
+                const chatItem = new ChatItem();
+                (<HTMLElement>dom.querySelector(".teams-embed-chat-items")).appendChild(chatItem);
+            }
 
             // handle at mention
             this.atMention(e);
