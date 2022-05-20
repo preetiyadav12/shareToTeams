@@ -107,15 +107,18 @@ namespace Microsoft.Teams.EmbeddedChat
 
                     // 1. Create a new entity state object and initialize it 
                     // 2. Create a new Online Meeting and get the Thread Id
+                    var chatInfo = await context.CallActivityAsync<ChatInfo>(Constants.CreateOnlineMeeting, requestData);
                     // 3. create a new ACS Client and fill the info to the entity state
+                    var acsInfo = await context.CallActivityAsync<ACSInfo>(Constants.CreateACSClientActivity, null);
+                    // Create a new Entity State
                     var newState = new EntityState
                     {
                         PartitionKey = requestData.EntityId,
                         RowKey = requestData.Owner.Id,
                         EntityId = requestData.EntityId,
                         Owner = requestData.Owner,
-                        ChatInfo = await context.CallActivityAsync<ChatInfo>(Constants.CreateOnlineMeeting, requestData),
-                        AcsInfo = await context.CallActivityAsync<ACSInfo>(Constants.CreateACSClientActivity, null),
+                        ChatInfo = chatInfo,
+                        AcsInfo = acsInfo,
                         CorrelationId = requestData.CorrelationId,
                         IsSuccess = false
                     };
