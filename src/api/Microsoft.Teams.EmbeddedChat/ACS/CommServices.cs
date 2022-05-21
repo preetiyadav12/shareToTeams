@@ -14,12 +14,6 @@ namespace Microsoft.Teams.EmbeddedChat.ACS
         private readonly CommunicationIdentityClient identityClient;
         private CommunicationTokenScope[] communicationTokenScopes;
 
-        public CommServices(Uri resourceEndpoint, CommunicationTokenScope[] communicationTokenScopes)
-        {
-            this.identityClient = new CommunicationIdentityClient(resourceEndpoint, this.tokenCredential);
-            this.communicationTokenScopes = communicationTokenScopes;
-        }
-
         public CommServices(string connectionString, CommunicationTokenScope[] communicationTokenScopes)
         {
             this.identityClient = new CommunicationIdentityClient(connectionString);

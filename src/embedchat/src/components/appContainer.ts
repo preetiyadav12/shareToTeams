@@ -4,6 +4,8 @@ import { AddParticipantDialog } from "./addParticipantDialog";
 import { ButtonPage } from "./buttonPage";
 import { Person } from "../models/person";
 import { ParticipantList } from "./participantList";
+import { Message } from "src/models/message";
+import { ChatItem } from "./chatItem";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -63,14 +65,33 @@ export class AppContainer extends HTMLElement {
     private photoUtil: PhotoUtil;
     private dialog:AddParticipantDialog;
     private participantList?:ParticipantList;
-    constructor(chatTitle: string, authInfo: AuthInfo) {
+    private messages:Message[];
+    constructor(messages:Message[], chatTitle: string, authInfo: AuthInfo) {
         super();
         this.chatTitle = chatTitle;
         this.authInfo = authInfo;
         this.photoUtil = new PhotoUtil();
         this.dialog =  new AddParticipantDialog(this.authInfo, this.photoUtil);
+        this.messages = messages;
         this.render();
     }
+
+    messageReceived = async (message:Message) => {
+        await this.renderMessage(message);
+        this.messages.push(message);
+    };
+
+    renderMessage = async (message:Message) => {
+        message.sender.photo = this.photoUtil.emptyPic;
+        const chatItem:ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
+        await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, message.sender.id).then((pic:string) => {
+            message.sender.photo = pic;
+            chatItem.refresh(message);
+        });
+        
+        const chatContainer = <HTMLElement>this.querySelector(".teams-embed-chat-items");
+        chatContainer.appendChild(chatItem);
+    };
 
     render = () => {
         // get the template
@@ -111,6 +132,11 @@ export class AppContainer extends HTMLElement {
         (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
             // TODO: send the message if Enter pressed
             console.log(e.key);
+        });
+
+        // bind messages
+        this.messages.forEach(async (m:Message, i:number) => {
+            this.renderMessage(m);
         });
 
         this.appendChild(dom);

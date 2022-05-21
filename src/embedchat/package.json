@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@azure/communication-chat": "1.1.0",
+    "@azure/communication-calling": "1.4.4",
     "@azure/communication-common": "1.1.0",
     "@azure/msal-browser": "^2.24.0",
     "@azure/storage-blob": "^12.9.0",

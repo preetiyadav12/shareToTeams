@@ -144,7 +144,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                 if (entityState.AcsInfo.AcsToken == null)
                 {
                     // create ACS Communication Identity Client Service
-                    var comClient = new CommServices(new Uri(_appConfiguration.AcsEndpoint),
+                    var comClient = new CommServices(_appConfiguration.AcsConnectionString,
                         new[] { CommunicationTokenScope.Chat });
 
                     // Refresh ACS Token and update the state
