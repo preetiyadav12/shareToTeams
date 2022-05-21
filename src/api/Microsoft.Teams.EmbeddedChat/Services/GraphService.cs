@@ -67,7 +67,6 @@ namespace Microsoft.Teams.EmbeddedChat.Services
                 .Build();
         }
 
-
         /// <summary>
         /// create GraphServiceClient
         /// </summary>
@@ -170,5 +169,39 @@ namespace Microsoft.Teams.EmbeddedChat.Services
                 throw;
             }
         }
+
+        public async Task<Models.Person[]> GetParticipantsListAsync(MeetingRequest meetingRequest)
+        {
+            var participants = new List<Models.Person>();
+
+            try
+            {
+                // Get the meeting data
+                var onlineMeeting = await _graphServiceClient.Users[meetingRequest.MeetingOwnerId]
+                    .OnlineMeetings[meetingRequest.MeetingId]
+                    .Request()
+                    .GetAsync();
+
+                foreach (var participant in onlineMeeting.Participants.Attendees)
+                {
+                    participants.Add(new Models.Person
+                    {
+                        Id = participant.Identity.User.Id,
+                        UserPrincipalName = participant.Upn,
+                        DisplayName = participant.Identity.User.DisplayName,
+                    });
+                }
+
+                return participants.ToArray();
+            }
+            catch (Exception e)
+            {
+                log.LogError(e.Message);
+                throw;
+            }
+        }
+
+
+
     }
 }
