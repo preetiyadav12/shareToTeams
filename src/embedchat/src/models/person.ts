@@ -3,5 +3,5 @@ export interface Person {
     userPrincipalName?: string;
     displayName: string;
     photo: string;
-  }
+}
   

@@ -1,5 +1,4 @@
 import { Message } from "src/models/message";
-import { Person } from "src/models/person";
 
 const template = document.createElement("template");
 template.innerHTML = `

@@ -130,7 +130,7 @@ export class AppContainer extends HTMLElement {
         (<HTMLElement>document.querySelector(".teams-embed-input-mention-container")).style.display = "none";
     }
 
-    atMention = (evt: KeyboardEvent) => {
+    createAtMention = (evt: KeyboardEvent) => {
         // close mention results window if hit escape
         if (evt.key == "Escape") {
             this.clearMentionContainer();
@@ -175,6 +175,35 @@ export class AppContainer extends HTMLElement {
         }
     }
 
+    sendMessage = () => {
+        const replaceEmptyDiv = "<div><br></div>";
+        const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"))
+        const person: Person = {
+            id: "asdf",
+            userPrincipalName: "asdf",
+            displayName: "asdf",
+            photo: "asdf"
+        }
+        const message: Message = {
+            message: input.innerHTML.replace(replaceEmptyDiv, ""),
+            sender: person,
+            id: "asdf",
+            threadId: "asdf",
+            version: "asdf",
+            type: "asdf",
+            createdOn: new Date()
+        };
+        
+        const chatItem = new ChatItem(message, false);
+        const chatItems = (<HTMLElement>document.querySelector(".teams-embed-chat-items"));
+        chatItems.appendChild(chatItem);
+        
+        // scroll to the bottom of the div
+        const chatContainer = (<HTMLElement>document.querySelector(".teams-embed-chat"))
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        input.innerHTML = "";
+    }
+
     render = () => {
         // get the template
         const dom = <HTMLElement>template.content.cloneNode(true);
@@ -207,21 +236,17 @@ export class AppContainer extends HTMLElement {
 
         // wire event to sent message
         (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
-            // TODO: send the message
+            this.sendMessage();
         });
         
         // wire event to send message on ENTER
         (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
-            // TODO: send the message if Enter pressed
-            console.log(e.key);
+            if (e.key == "Enter") {
+                this.sendMessage();
+            }
 
             // handle at mention
-            this.atMention(e);
-        });
-
-        // bind messages
-        this.messages.forEach(async (m:Message, i:number) => {
-            this.renderMessage(m);
+            this.createAtMention(e);
         });
 
         this.appendChild(dom);
