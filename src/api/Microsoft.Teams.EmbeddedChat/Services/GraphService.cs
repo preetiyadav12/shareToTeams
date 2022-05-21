@@ -174,23 +174,31 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         {
             var participants = new List<Models.Person>();
 
-            // Get the meeting data
-            var onlineMeeting = await _graphServiceClient.Users[meetingRequest.MeetingOwnerId]
-                .OnlineMeetings[$"{meetingRequest.MeetingId}"]
-                .Request()
-                .GetAsync();
-
-            foreach (var participant in onlineMeeting.Participants.Attendees)
+            try
             {
-                participants.Add(new Models.Person
-                {
-                    Id = participant.Identity.User.Id,
-                    UserPrincipalName = participant.Upn,
-                    DisplayName = participant.Identity.User.DisplayName,
-                });
-            }
+                // Get the meeting data
+                var onlineMeeting = await _graphServiceClient.Users[meetingRequest.MeetingOwnerId]
+                    .OnlineMeetings[meetingRequest.MeetingId]
+                    .Request()
+                    .GetAsync();
 
-            return participants.ToArray();
+                foreach (var participant in onlineMeeting.Participants.Attendees)
+                {
+                    participants.Add(new Models.Person
+                    {
+                        Id = participant.Identity.User.Id,
+                        UserPrincipalName = participant.Upn,
+                        DisplayName = participant.Identity.User.DisplayName,
+                    });
+                }
+
+                return participants.ToArray();
+            }
+            catch (Exception e)
+            {
+                log.LogError(e.Message);
+                throw;
+            }
         }
 
 
