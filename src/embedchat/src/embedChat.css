@@ -596,6 +596,11 @@
   text-align: left;
   word-break: break-word;
 }
+
+.teams-embed-chat-message-content p:first-child {
+  margin: 0;
+}
+
 /* End Chat Messages */
 
 /* Start Footer */
