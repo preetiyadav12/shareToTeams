@@ -596,6 +596,11 @@
   text-align: left;
   word-break: break-word;
 }
+
+.teams-embed-chat-message-content p:first-child {
+  margin: 0;
+}
+
 /* End Chat Messages */
 
 /* Start Footer */
@@ -637,7 +642,7 @@
   border-radius: 0.2143rem 0.2143rem 0.1429rem 0.1429rem;
   border-style: solid;
   border-color: transparent;
-  overflow: visible;
+  box-sizing: border-box;
 }
 
 .teams-embed-footer-input:focus {
@@ -691,3 +696,7 @@
   display: block;
 }
 /* End Footer */
+
+.teams-embed-mention-user {
+  color: rgb(91, 95, 199);
+}

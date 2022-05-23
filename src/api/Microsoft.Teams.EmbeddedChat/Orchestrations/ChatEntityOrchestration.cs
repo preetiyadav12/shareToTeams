@@ -54,6 +54,9 @@ namespace Microsoft.Teams.EmbeddedChat
                         // 6. end foreach loop
                         foreach (var entity in entities)    
                         {
+                            // TODO: Temporarily disable the flow of Get Participant until it works!!!!
+                            return entity;
+
                             var meetingRequest = new MeetingRequest
                             {
                                 MeetingId = entity.ChatInfo.MeetingId,

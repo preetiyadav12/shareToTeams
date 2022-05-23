@@ -1,0 +1,24 @@
+<html>
+    <head></head>
+    <body>
+        <div id="embed" style="postion: absolute; left: 0px; right: 0px; top: 0px; left: 0px;">
+
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://rzdev.blob.core.windows.net/$web/embedChat.js"></script>
+        <script>
+            $(document).ready(() => {
+                var config = {
+                    hostDomain: "rzdev.blob.core.windows.net/$web",
+                    apiBaseUrl: "http://richdizz.ngrok.io",
+                    clientId: "7f763835-498a-43a0-a421-44b3cdf631ad",
+                    tenant: "msteamsdemos.onmicrosoft.com",
+                    acsEndpoint: "https://ms-demos-acs-embchat-dannyg.communication.azure.com/"
+                };
+                                                
+                var chat = new MSTeamsExt.EmbeddedChat(config);
+                chat.renderEmbed(document.getElementById("embed"), window.location.search.split("=")[1]);
+            });
+        </script>
+    </body>
+</html>
