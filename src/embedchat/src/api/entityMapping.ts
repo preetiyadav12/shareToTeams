@@ -1,5 +1,5 @@
 import { AppSettings } from "../config/appSettings";
-import { EntityState } from "../models/entity-state";
+import { ChatInfoRequest, EntityState } from "../models";
 
 export class EntityApi {
   private readonly config: AppSettings;
@@ -12,8 +12,8 @@ export class EntityApi {
     console.log(`API Base Url: ${this.config.apiBaseUrl}`);
   }
 
-  public getMapping = async (entityRequest: EntityState): Promise<EntityState | undefined> => {
-    if (!entityRequest) {
+  public getMapping = async (chatInfoRequest: ChatInfoRequest): Promise<EntityState | any> => {
+    if (!chatInfoRequest) {
       throw new Error("Entity Id cannot be emtpy!");
     }
 
@@ -23,28 +23,55 @@ export class EntityApi {
         Authorization: `Bearer ${this.idToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(entityRequest),
+      body: JSON.stringify(chatInfoRequest),
     };
 
-    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping`, requestOptions);
+    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity`, requestOptions);
 
-    if (!resp.ok) return undefined;
-
-    return await resp.json();
+    console.log(resp);
+    if (resp.ok) {
+      if (resp.status === 200) {
+        const data = (await resp.json()) as EntityState;
+        return data;
+      } else if (resp.status === 500) {
+        const data = await resp.json();
+        console.log(data.Content);
+        return null;
+      }
+    } else {
+      if (resp.status === 404) {
+        // Entity is not found
+        console.log(`No entity mapping found for this entity: ${chatInfoRequest.entityId}`);
+        return null;
+      }
+      throw new Error(resp.statusText);
+    }
   };
 
-  public updateMapping = async (entity: EntityState): Promise<boolean> => {
+  public createChat = async (chatInfoRequest: ChatInfoRequest): Promise<EntityState | null> => {
     const requestOptions = {
       method: "POST",
       headers: new Headers({
         Authorization: `Bearer ${this.idToken}`,
         "Content-Type": "application/json",
       }),
-      body: JSON.stringify(entity),
+      body: JSON.stringify(chatInfoRequest),
     };
 
-    const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/mapping/update`, requestOptions);
+    try {
+      const resp = await fetch(`${this.config.apiBaseUrl}/api/entity/create`, requestOptions);
 
-    return resp.ok;
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (error) {
+      const err = error as Error;
+      if (err) {
+        console.log(err.message);
+      }
+      throw error;
+    }
+
+    return null;
   };
 }

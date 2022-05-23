@@ -11,59 +11,32 @@
     <!-- <script src="node_modules/@msteams/embedchat/dist/embedChat.js"></script> -->
     <script>
       $(document).ready(() => {
-        var EmbeddedChat = MSTeamsExt.EmbeddedChat;
-        var entityId = "10001";
-
-        var appSettings = {
-          hostDomain: "msembedchatdevsta.blob.core.windows.net/$web",
+        var config = {
+          hostDo‡main: "msembedchatdevsta.blob.core.windows.net/$web",
           apiBaseUrl: "http://localhost:7071",
-          clientId: "c7dffc2e-43bb-46c3-9e03-5dfd2116ff88",
-          tenant: "8385af7f-4e3e-42b9-a17d-0a43eb16aefd",
-          acsEndpoint:
-            "endpoint=https://ms-demos-acs-embchat-dannyg.communication.azure.com",
+          clientId: "04e73f98-3b7f-460a-a449-dfbe3d7664c9",
+          tenant: "msteamsdemos.onmicrosoft.com",
+          acsEndpoint: "https://ms-demos-acs-embchat-dannyg.communication.azure.com/"
         };
 
-        var chatTitleDiv = document.getElementById("title");
-        var chatWindowDiv = document.getElementById("embed");
-        var logsDiv = document.getElementById("log");
-
-        var embchat = new EmbeddedChat(appSettings);
-
-        var App = function (chat) {
-          return `<h1>${chat.PrintName("Danny")}</h1>`;
-        };
-
-        var renderChat = (Chat, Root, title, where, what, log) => {
-          log.innerHTML = `Entity Id: ${what}`;
-          title.innerHTML = Root(Chat);
-          Chat.renderEmbed(where, what)
-            .then(() => {
-              log.innerHTML = "Rendered successfully!";
-            })
-            .catch((error) => {
-              if (error !== undefined) {
-                log.innerHTML = error;
-              } else {
-                log.innerHTML = "Failed to load Embedded Chat control.";
-              }
-            });
-        };
-
-        renderChat(
-          embchat,
-          App,
-          chatTitleDiv,
-          chatWindowDiv,
-          entityId,
-          logsDiv
-        );
+        var chat = new MSTeamsExt.EmbeddedChat(config);
+        chat.renderEmbed(document.getElementById("embed"), "12345");
       });
     </script>
   </head>
   <body>
     <h3>👋 Embedded Chat</h3>
-    <div id="title"></div>
-    <div id="log" title="Logs: " style="border: 1px; font-size: large"></div>
-    <div id="embed" style="height: 400px"></div>
+    <div
+      id="embed"
+      style="
+        width: 400px;
+        height: 500px;
+        position: absolute;
+        left: 50%;
+        margin-left: -200px;
+        top: 20px;
+        border: 1px solid #333;
+      "
+    ></div>
   </body>
 </html>

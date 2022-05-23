@@ -1,19 +1,28 @@
-import { ChatClient, ChatClientOptions, ChatMessage as CM, CreateChatThreadRequest } from "@azure/communication-chat";
+import { ChatClient, ChatMessage as CM } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
+import { CallClient } from "@azure/communication-calling";
+import { v4 as uuidv4 } from "uuid";
 import { AuthInfo, EntityState } from "./models";
 import { AuthUtil } from "./api/authUtil";
 import { AppSettings } from "./config/appSettings";
 import { EntityApi } from "./api/entityMapping";
 import { PhotoUtil } from "./api/photoUtil";
 import { ButtonPage } from "./components/buttonPage";
+import { ChatInfoRequest } from "./models/chat-info-request";
 import { Waiting } from "./components/waiting";
+import { AddParticipantDialog } from "./components/addParticipantDialog";
+import { Person } from "./models/person";
+import { AppContainer } from "./components/appContainer";
+import { Message } from "./models/message";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
   private creds?: AzureCommunicationTokenCredential;
   private chatClient?: ChatClient;
   private profilePics: Record<string, string> = {};
+  private chatTopic = "Chat Topic Name";
   private waiting: Waiting;
+  private authResult?:AuthInfo;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -41,85 +50,159 @@ export class EmbeddedChat {
     // add waiting indicator to UI and display it while we authenticate and check for mapping
     element.appendChild(this.waiting);
     this.waiting.show();
-    const authResult = await AuthUtil.acquireToken(element, this.appSettings, this.waiting);
-    console.log(authResult);
-    if (!authResult) {
+    this.authResult = await AuthUtil.acquireToken(element, this.appSettings, this.waiting);
+    console.log(this.authResult);
+    if (!this.authResult) {
       console.log("authResult cannot be null!");
       return;
     }
 
-    console.log(`User Id: ${authResult.uniqueId}`);
-    console.log(`Graph Token: ${authResult.accessToken}`);
-    console.log(`Id Token: ${authResult.idToken}`);
-    console.log(`Token Expires On: ${authResult.expiresOn}`);
+    console.log(`User Id: ${this.authResult.uniqueId}`);
+    console.log(`Graph Token: ${this.authResult.accessToken}`);
+    console.log(`Id Token: ${this.authResult.idToken}`);
+    console.log(`Token Expires On: ${this.authResult.expiresOn}`);
 
     console.log(`Trying to get Entity Mapping. Calling ${this.appSettings.apiBaseUrl}/getMapping`);
-    const entityApi = new EntityApi(this.appSettings, authResult.accessToken);
+    const entityApi = new EntityApi(this.appSettings, this.authResult.idToken);
+    const chatOwner: Person = {
+      id: this.authResult.uniqueId,
+      userPrincipalName: this.authResult.account.username,
+      displayName: this.authResult.account.name,
+      photo: "",
+    };
+
+    // create the Entity Request
+    const chatRequest: ChatInfoRequest = {
+      entityId,
+      owner: chatOwner,
+      accessToken: this.authResult.accessToken,
+      topic: this.chatTopic,
+      participants: [],
+      correlationId: uuidv4(),
+      isSuccess: false,
+    };
 
     // try to get the mapping for this entity id
-    const entityState: EntityState = (await entityApi.getMapping({
-      entityId,
-      userId: authResult.uniqueId,
-    })) as EntityState;
+    const entityState: EntityState = (await entityApi.getMapping(chatRequest))!;
+    if (entityState && !entityState.isSuccess) {
+      alert(
+        `There is at least one other chat for this entity is in progress. Please contact one of the owners of the existing chats: ${entityState.owner}`,
+      );
+      return;
+    }
+    if (!entityState) {
+      // alert(`No entity mapping found for this entity: ${entityId}`);
+      // TODO: check autoStart value
+      this.waiting.hide();
 
-    console.log(`Entity Id: ${entityState.entityId}`);
-    console.log(`Thread Id: ${entityState.threadId}`);
-    console.log(`ACS User Id: ${entityState.acsUserId}`);
-    console.log(`ACS Token: ${entityState.acsToken}`);
+      const photoUtil: PhotoUtil = new PhotoUtil();
+      const dialog: AddParticipantDialog = new AddParticipantDialog(
+        this.authResult,
+        photoUtil,
+        async (participants: Person[]) => {
+          console.log(participants);
+          // Update the list of participants
+          chatRequest.participants = participants;
+          // Wait until the chat is created
+          this.waiting.show();
+
+          // Start the chat
+          const chatResponse = await entityApi.createChat(chatRequest);
+          if (!chatResponse) {
+            alert("Failed to initialize a new chat!");
+            return;
+          }
+          
+          element.removeChild(btn);
+          await this.initializeChat(element, chatResponse, true);
+        },
+      );
+
+      const btn = new ButtonPage("Start Teams Chat", async () => {
+        dialog.show(false);
+      });
+      element.append(dialog);
+      element.append(btn);
+    }
+    else {
+      await this.initializeChat(element, entityState, false);
+    }
+  }
+
+  private initializeChat =  async (element: Element, entityState: EntityState, isNew: boolean) => {
+    // Hide the waiting indicator
+    this.waiting.hide();
+
+    console.log(`Entity State: ${entityState}`);
+    console.log(entityState);
 
     // // initialize the ACS Client
     console.log("Initializing ACS Client...");
-    this.creds = new AzureCommunicationTokenCredential(entityState.acsToken!);
+    this.creds = new AzureCommunicationTokenCredential(entityState.acsInfo.acsToken!);
     this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
 
-    console.log("Successfully initialized ACS Chat Client!");
-    const threads = this.chatClient.listChatThreads();
-    console.log(`Total of chat threads for this user is: ${threads?.byPage.length}`);
-
+    // start the realtime notificationa
     await this.chatClient.startRealtimeNotifications();
 
-    // determine if this is a new thread or not
-    const messages: CM[] = [];
-    if (!entityState.threadId || entityState.threadId === "") {
-      // TODO: check autoStart value
-      this.waiting.hide();
-      const btn = new ButtonPage("Start Teams Chat", async () => {
-        // this is a new thread...start it
-        console.log("Starting a new Chat thread...");
-        const chatRequest: CreateChatThreadRequest = {
-          topic: entityId,
-        };
-        if (this.chatClient) {
-          const chatThreadResult = await this.chatClient.createChatThread(chatRequest);
+    // establish the call
+    const callClient = new CallClient({});
+    const callAgent = await callClient.createCallAgent(this.creds, {displayName: "My 3rd Party App"});
+    const locator = { meetingLink: entityState.chatInfo.joinUrl };
+    const meetingCall = callAgent.join(locator);
 
-          console.log(
-            `New Chat Thread was created for the topic: ${chatThreadResult.chatThread?.topic} and chat Id: ${chatThreadResult.chatThread?.id}`,
-          );
-        }
-      });
-      element.append(btn);
-    } else {
-      // load the existing thread messages
-      const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.threadId);
+    // load the existing thread messages if this is an existing chat
+    const messages: Message[] = [];
+    if (!isNew)
+    {
+      const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.chatInfo.threadId);
       console.log(chatThreadClient);
       for await (const chatMessage of chatThreadClient.listMessages()) {
-        messages.unshift(chatMessage);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (chatMessage.sender && !this.profilePics[(chatMessage.sender as any).microsoftTeamsUserId]) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const userId = (chatMessage.sender as any).microsoftTeamsUserId;
-          this.profilePics[userId] = await PhotoUtil.getGraphPhotoAsync(authResult.accessToken, userId);
+        console.log(chatMessage);
+        if (chatMessage.type == "html") {
+          messages.push({
+            id: chatMessage.id,
+            message: (<any>chatMessage).content.message,
+            sender: {
+              id: (<any>chatMessage).sender.microsoftTeamsUserId,
+              displayName: chatMessage.senderDisplayName!,
+              photo: ""
+            },
+            threadId: entityState.chatInfo.threadId,
+            type: chatMessage.type,
+            version: chatMessage.version,
+            createdOn: chatMessage.createdOn
+          });
         }
       }
-
-      //hide waiting indicator to show UI
-      this.waiting.hide();
+      console.log(messages);
     }
 
+    // inert the appComponent
+    const appComponent:AppContainer = new AppContainer(messages, "Hello World", this.authResult!);
+    element.appendChild(appComponent);
+
+    //hide waiting indicator to show UI
+    this.waiting.hide();
+
     // listen for events
-    this.chatClient.on("chatMessageReceived", async (e) => {
+    this.chatClient.on("chatMessageReceived", async (e:any) => {
       console.log("TODO: chatMessageReceived");
       console.log(e);
+
+      // send the message to the appContainer
+      appComponent.messageReceived({
+        id: e.id,
+        message: e.message,
+        sender: {
+          id: e.sender.microsoftTeamsUserId,
+          displayName: e.senderDisplayName,
+          photo: ""
+        },
+        threadId: e.threadId,
+        type: e.type,
+        version: e.version,
+        createdOn: e.createdOn
+      });
     });
     this.chatClient.on("chatMessageEdited", async (e) => {
       console.log("TODO: chatMessageEdited");
@@ -137,5 +220,5 @@ export class EmbeddedChat {
       console.log("TODO: participantsRemoved");
       console.log(e);
     });
-  }
+  };
 }

@@ -22,6 +22,9 @@ namespace Microsoft.Teams.EmbeddedChat
 
             builder.Services.AddLogging();
             builder.Services.AddScoped<EntityMappingActivity>();
+            builder.Services.AddScoped<ChatInfoActivity>();
+            builder.Services.AddScoped<CreateAcsClientActivity>();
+            builder.Services.AddScoped<ParticipantsActivity>();
             builder.Services.AddScoped<Processing>();
         }
 

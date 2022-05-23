@@ -11,6 +11,6 @@ namespace Microsoft.Teams.EmbeddedChat.Models
     {
         UknownOperation,
         GetEntityState,
-        UpdateEntityState
+        CreateEntityState
     }
 }

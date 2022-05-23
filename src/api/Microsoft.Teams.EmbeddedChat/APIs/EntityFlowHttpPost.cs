@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Teams.EmbeddedChat.Models;
+using System;
 
 namespace Microsoft.Teams.EmbeddedChat.APIs
 {
@@ -25,37 +26,42 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
         /// <param name="client"></param>
         /// <param name="log"></param>
         /// <returns></returns>
-        [FunctionName(Constants.EntityMappingAPIHttpPost)]
+        [FunctionName(Constants.GetEntityAPIHttpPost)]
         public async Task<IActionResult> EntityMapping(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = Constants.GetEntityStateRoute)] HttpRequestMessage request,
             [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            log.LogInformation($"Started new {Constants.EntityMappingAPIHttpPost} flow.");
 
-            var requestData = await request.Content.ReadAsAsync<EntityState>();
+            log.LogInformation($"Started new {Constants.GetEntityAPIHttpPost} flow.");
+
+
+            var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
 
             return await _processing.ProcessFlow(ParseOperation(request), requestData, request, client);
         }
 
         /// <summary>
-        /// Update the entity state
+        /// Create a new chat and the entity state
         /// </summary>
         /// <param name="request"></param>
         /// <param name="client"></param>
         /// <param name="log"></param>
         /// <returns></returns>
-        [FunctionName(Constants.EntityUpdateAPIHttpPost)]
-        public async Task<IActionResult> EntityUpdate(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = Constants.UpdateEntityStateRoute)] HttpRequestMessage request,
+        [FunctionName(Constants.CreateChatAPIHttpPost)]
+        public async Task<IActionResult> CreateChat(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = Constants.CreateEntityStateRoute)] HttpRequestMessage request,
             [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            log.LogInformation($"Started new {Constants.EntityUpdateAPIHttpPost} flow.");
+            log.LogInformation($"Started new {Constants.CreateChatAPIHttpPost} flow.");
 
-            var requestData = await request.Content.ReadAsAsync<EntityState>();
+            var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
+
+            // extract access token from the header
+            requestData.accessToken = request.Headers.Authorization.Parameter;
 
             return await _processing.ProcessFlow(ParseOperation(request), requestData, request, client);
         }
@@ -71,8 +77,8 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
             if (request.RequestUri.PathAndQuery.Equals($"/api/{Constants.GetEntityStateRoute}"))
                 return ApiOperation.GetEntityState;
 
-            if (request.RequestUri.PathAndQuery.Equals($"/api/{Constants.UpdateEntityStateRoute}"))
-                return ApiOperation.UpdateEntityState;
+            if (request.RequestUri.PathAndQuery.Equals($"/api/{Constants.CreateEntityStateRoute}"))
+                return ApiOperation.CreateEntityState;
 
             return ApiOperation.UknownOperation;
         }

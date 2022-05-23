@@ -147,7 +147,7 @@
 /* Start AddParticipantDialog */
 .teams-embed-add-participant-dialog {
   width: 400px;
-  height: 200px;
+  min-height: 160px;
   background: #fff;
   border-radius: 5px;
   position: absolute;
@@ -155,7 +155,9 @@
   top: 50px;
   box-shadow: 0 0 2px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.14);
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Web", sans-serif;
+  z-index: 2000;
 }
 
 .teams-embed-add-participant-dialog-form {
@@ -169,7 +171,7 @@
   margin: 5px 0px;
 }
 
-.teams-embed-add-participant-dialog-form > div:nth-of-type(2) {
+.teams-embed-add-participant-dialog-form > div:nth-of-type(1) {
   margin-top: 12px;
 }
 
@@ -224,35 +226,35 @@
 /* Start PeoplePicker */
 .teams-embed-peoplepicker {
   background: #eeeeee;
-  height: 30px;
+  min-height: 30px;
   width: 100%;
   border-bottom: 2px solid transparent;
   border-radius: 2px;
-  display: flex;
 }
 .teams-embed-peoplepicker:focus-within {
   border-bottom: 2px solid #574fbd;
 }
 
-.teams-embed-peoplepicker-selections {
-  padding: 6px;
+.teams-embed-peoplepicker-input-wrapper {
+  display: flex;
+  flex-wrap: wrap;
 }
+
 .teams-embed-peoplepicker-input {
   flex-grow: 1;
 }
-.teams-embed-peoplepicker-input input {
-  width: 100%;
+.teams-embed-peoplepicker-input-ctrl {
+  outline: none; 
+  white-space: nowrap; 
+  padding: 6px; 
   font-size: 14px;
-  border: 0; 
-  background: transparent;
-  padding: 8px;
-}
-
-.teams-embed-peoplepicker-input input:focus {
-  outline: none;
 }
 
 /* Start PeoplePickerSelection */
+.teams-embed-peoplepicker-selection-outer {
+  padding: 6px;
+}
+
 .teams-embed-peoplepicker-selection {
   display: flex;
   height: 20px;
@@ -273,6 +275,7 @@
 .teams-embed-peoplepicker-selection-name {
   font-size: 14px;
   padding: 0px 4px;
+  white-space: nowrap;
 }
 
 .teams-embed-peoplepicker-selection-remove {
@@ -284,7 +287,6 @@
 .teams-embed-peoplepicker-suggestions {
   position: absolute;
   background: white;
-  margin-top: 32px; 
   width: 368px; 
   box-sizing: inherit;
   box-shadow: 0 .2rem .4rem -.075rem rgba(0,0,0,.25);
@@ -611,6 +613,21 @@
   margin: 0 10px;
 }
 
+.teams-embed-input-mention-container {
+  background: #fff; 
+  position: absolute; 
+  display: flex; 
+  height: 200px; 
+  flex-direction: column; 
+  width: 300px; 
+  margin-top: -205px;
+  box-shadow: 0 0 2px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.14);
+  border-radius: 5px;
+  left: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .teams-embed-footer-input {
   background: rgb(255, 255, 255);
   width: 100%;
@@ -620,7 +637,7 @@
   border-radius: 0.2143rem 0.2143rem 0.1429rem 0.1429rem;
   border-style: solid;
   border-color: transparent;
-  overflow: visible;
+  box-sizing: border-box;
 }
 
 .teams-embed-footer-input:focus {
@@ -674,3 +691,7 @@
   display: block;
 }
 /* End Footer */
+
+.teams-embed-mention-user {
+  color: rgb(91, 95, 199);
+}

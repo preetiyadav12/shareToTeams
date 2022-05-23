@@ -13,6 +13,10 @@
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.7.1" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Microsoft.Graph" Version="4.29.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Microsoft.Graph" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

@@ -24,7 +24,7 @@ namespace Microsoft.Teams.EmbeddedChat
 
         public async Task<IActionResult> ProcessFlow(
             ApiOperation operation,
-            EntityState requestData,
+            ChatInfoRequest requestData,
             HttpRequestMessage request,
             IDurableOrchestrationClient client)
         {
@@ -59,6 +59,20 @@ namespace Microsoft.Teams.EmbeddedChat
                 };
             }
             var completeResponseData = data.Output.ToObject<EntityState>();
+
+            if (completeResponseData == null)
+                return new NotFoundResult();
+
+            if (!completeResponseData.IsSuccess)
+            {
+                var content = new ContentResult
+                {
+                    Content = completeResponseData.Owner.UserPrincipalName,
+                    ContentType = "application/json",
+                    StatusCode = (int)HttpStatusCode.InternalServerError
+                };
+                return new OkObjectResult(content);
+            }
 
             return new OkObjectResult(completeResponseData);
         }

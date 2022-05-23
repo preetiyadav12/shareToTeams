@@ -7,14 +7,13 @@ namespace Microsoft.Teams.EmbeddedChat.Models
     /// <summary>
     /// Class for EntityState.
     /// </summary>
-    public class EntityState : IBaseTableEntity
+    public class EntityState : BaseModel
     {
         public string EntityId { get; set; }
-        public string UserId { get; set; }
-        public string ThreadId { get; set; }
-        public string AcsUserId { get; set; }
-        public string AcsToken { get; set; }
-        public string TokenExpiresOn { get; set; }
+        public Person Owner { get; set; }
+        public ChatInfo ChatInfo { get; set; }
+        public Person[] Participants { get; set; }
+        public ACSInfo AcsInfo { get; set; }
 
         public EntityState Copy(EntityState source) { return source.Copy(this); }
     }
