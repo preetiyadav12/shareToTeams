@@ -40,20 +40,6 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             // Create a new online meeting
             var onlineMeeting = await _graphClient.CreateOnlineMeetingAsync(requestData);
 
-            // TEST!!!!
-            // Get the Meeting details
-            var meetingRequest = new MeetingRequest
-            {
-                MeetingId = onlineMeeting.Id,
-                MeetingOwnerId = requestData.Owner.Id,
-                AccessToken = requestData.AccessToken
-            };
-            var participants = await _graphClient.GetParticipantsListAsync(meetingRequest);
-            foreach (var person in participants)
-            {
-                _log.LogInformation(person.UserPrincipalName, person.DisplayName, person.Id);
-            }
-
             _log.LogInformation($"Successfully created a new online meeting with meeting Id: {onlineMeeting.Id}");
             _log.LogInformation($"..and with thread Id: {onlineMeeting.ChatInfo.ThreadId}");
 
