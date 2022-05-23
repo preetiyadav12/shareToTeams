@@ -1,11 +1,17 @@
 {
     "version": "2.0",
     "logging": {
-        "applicationInsights": {
-            "samplingSettings": {
-                "isEnabled": true,
-                "excludedTypes": "Request"
-            }
+      "applicationInsights": {
+        "samplingSettings": {
+          "isEnabled": true,
+          "excludedTypes": "Request"
         }
+      },
+      "logLevel": {
+        "Microsoft.Teams.EmbeddedChat.Activities.ChatInfoActivity": "Information",
+        "Microsoft.Teams.EmbeddedChat.Activities.EntityMappingActivity": "Information",
+        "Microsoft.Teams.EmbeddedChat.Activities.CreateAcsClientActivity": "Information",
+        "Microsoft.Teams.EmbeddedChat.Activities.ParticipantsActivity": "Information"
+      }
     }
 }

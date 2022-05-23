@@ -1,15 +1,15 @@
-﻿using Microsoft.Graph;
-using Azure.Identity;
+﻿using Azure.Identity;
+using Microsoft.Graph;
 using Microsoft.Identity.Client;
-using System;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 using Microsoft.Teams.EmbeddedChat.Models;
+using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace Microsoft.Teams.EmbeddedChat.Services
 {
-    public class GraphService
+    public class GraphService : IGraphService
     {
         // The client credentials flow requires that you request the
         // /.default scope, and preconfigure your permissions on the
@@ -20,10 +20,9 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         private readonly string clientSecret;
         private readonly string tenantId;
         private readonly IConfidentialClientApplication cca;
-        private readonly ILogger log;
-        private readonly string userToken;
 
         private GraphServiceClient _graphServiceClient;
+        private ILogger _logger;
 
 
         /// <summary>
@@ -32,32 +31,18 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         /// <param name="clientId"></param>
         /// <param name="clientSecret"></param>
         /// /// <param name="tenantId"></param>
-        public GraphService(string accessToken, ILogger logger)
+        public GraphService()
         {
-            userToken = accessToken;
-            log = logger;
             clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
             clientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET");
             tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
-
-            log.LogInformation($"Client Id: {clientId}");
-            log.LogInformation($"Tenant Id: {tenantId}");
-
             if (String.IsNullOrEmpty(clientId))
-            {
-                log.LogError("Missing AZURE_CLIENT_ID environment variable");
                 throw new ArgumentException("Missing AZURE_CLIENT_ID environment variable");
-            }
             if (String.IsNullOrEmpty(clientSecret))
-            {
-                log.LogError("Missing AZURE_CLIENT_SECRET environment variable");
                 throw new ArgumentException("Missing AZURE_CLIENT_SECRET environment variable");
-            }
             if (String.IsNullOrEmpty(tenantId))
-            {
-                log.LogError("Missing AZURE_TENANT_ID environment variable");
                 throw new ArgumentException("Missing AZURE_TENANT_ID environment variable");
-            }
+
 
             cca = ConfidentialClientApplicationBuilder
                 .Create(clientId)
@@ -71,8 +56,9 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         /// create GraphServiceClient
         /// </summary>
         /// <returns>GraphServiceClient</returns>
-        public void GetGraphServiceClient()
+        public void GetGraphServiceClient(string userToken, ILogger logger)
         {
+            this._logger = logger;
             try
             {
                 // Multi-tenant apps can use "common",
@@ -105,9 +91,8 @@ namespace Microsoft.Teams.EmbeddedChat.Services
                 {
                     failureReason = "The user or admin has not provided sufficient consent for the application";
                 }
-                log.LogError(failureReason);
-
-                throw;
+                _logger.LogError(failureReason);
+                throw new ApplicationException(failureReason);
             }
         }
 
@@ -131,15 +116,6 @@ namespace Microsoft.Teams.EmbeddedChat.Services
                 {
                     var member = new MeetingParticipantInfo
                     {
-                        //Identity = new IdentitySet
-                        //{
-                        //    User = new Graph.Identity
-                        //    {
-                        //        Id = participant.Id,
-                        //        DisplayName = participant.DisplayName,
-                        //    },
-                        //    ODataType = "#microsoft.graph.identitySet"
-                        //},
                         Upn = participant.UserPrincipalName,
                         Role = OnlineMeetingRole.Attendee,
                     };
@@ -165,7 +141,7 @@ namespace Microsoft.Teams.EmbeddedChat.Services
             }
             catch (Exception ex)
             {
-                log.LogError(ex.Message);
+                _logger.LogError(ex.Message);
                 throw;
             }
         }
@@ -196,7 +172,7 @@ namespace Microsoft.Teams.EmbeddedChat.Services
             }
             catch (Exception e)
             {
-                log.LogError(e.Message);
+                _logger.LogError(e.Message);
                 throw;
             }
         }

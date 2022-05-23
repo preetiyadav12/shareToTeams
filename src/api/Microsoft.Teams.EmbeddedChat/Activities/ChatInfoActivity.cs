@@ -1,7 +1,6 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Services;
 using System.Threading.Tasks;
@@ -10,11 +9,13 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
 {
 	public class ChatInfoActivity
 	{
-        private readonly AppSettings _appConfiguration;
+        private readonly IGraphService _graphClient;
+        private readonly ILogger<ChatInfoActivity> _log;
 
-        public ChatInfoActivity(IOptions<AppSettings> configuration)
+        public ChatInfoActivity(IGraphService graphService, ILogger<ChatInfoActivity> log)
         {
-            _appConfiguration = configuration.Value;
+            _log = log;
+            _graphClient = graphService;
         }
 
         /// <summary>
@@ -25,26 +26,36 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <returns></returns>
         [FunctionName(Constants.CreateOnlineMeeting)]
         public async Task<Models.ChatInfo> CreateOnlineMeetingAsync(
-            [ActivityTrigger] IDurableActivityContext context, ILogger log)
+            [ActivityTrigger] IDurableActivityContext context)
         {
-            log.LogInformation($"Activity {Constants.CreateOnlineMeeting} has started.");
+            _log.LogInformation($"Activity {Constants.CreateOnlineMeeting} has started.");
 
             // retrieves the entity state from the orchestration
-            var requestData = context.GetInput<ChatInfoRequest>();
-
-
-            // Create a Graph Service client
-            var graphClient = new GraphService(requestData.accessToken, log);
+            var orchestrationData = context.GetInput<OrchestrationRequest>();
+            var requestData = orchestrationData.Request;
 
             // Initialize the graph client
-            graphClient.GetGraphServiceClient();
+            _graphClient.GetGraphServiceClient(orchestrationData.AccessToken, _log);
 
             // Create a new online meeting
-            var onlineMeeting = await graphClient.CreateOnlineMeetingAsync(requestData);
+            var onlineMeeting = await _graphClient.CreateOnlineMeetingAsync(requestData);
 
+            // TEST!!!!
+            // Get the Meeting details
+            var meetingRequest = new MeetingRequest
+            {
+                MeetingId = onlineMeeting.Id,
+                MeetingOwnerId = requestData.Owner.Id,
+                AccessToken = requestData.AccessToken
+            };
+            var participants = await _graphClient.GetParticipantsListAsync(meetingRequest);
+            foreach (var person in participants)
+            {
+                _log.LogInformation(person.UserPrincipalName, person.DisplayName, person.Id);
+            }
 
-            log.LogInformation($"Successfully created a new online meeting with meeting Id: {onlineMeeting.Id}");
-            log.LogInformation($"..and with thread Id: {onlineMeeting.ChatInfo.ThreadId}");
+            _log.LogInformation($"Successfully created a new online meeting with meeting Id: {onlineMeeting.Id}");
+            _log.LogInformation($"..and with thread Id: {onlineMeeting.ChatInfo.ThreadId}");
 
             // Return the custom Chat Info entity
             return new Models.ChatInfo

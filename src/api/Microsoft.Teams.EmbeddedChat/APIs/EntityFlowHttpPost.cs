@@ -60,9 +60,6 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
             var requestData = await request.Content.ReadAsAsync<ChatInfoRequest>();
             log.LogInformation($"Started new flow for the Entity ID = '{requestData.EntityId}'.");
 
-            // extract access token from the header
-            requestData.accessToken = request.Headers.Authorization.Parameter;
-
             return await _processing.ProcessFlow(ParseOperation(request), requestData, request, client);
         }
 

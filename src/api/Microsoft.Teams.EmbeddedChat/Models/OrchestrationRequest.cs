@@ -11,5 +11,6 @@ namespace Microsoft.Teams.EmbeddedChat.Models
     {
         public ApiOperation Operation { get; set; }
         public ChatInfoRequest Request { get; set; }
+        public string AccessToken { get; set; }
     }
 }

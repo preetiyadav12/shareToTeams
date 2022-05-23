@@ -2,23 +2,21 @@
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Graph;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Services;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Microsoft.Teams.EmbeddedChat.Activities
 {
     public class ParticipantsActivity
     {
-        private readonly AppSettings _appConfiguration;
+        private readonly IGraphService _graphClient;
+        private readonly ILogger<ParticipantsActivity> _log;
 
-        public ParticipantsActivity(IOptions<AppSettings> configuration)
+        public ParticipantsActivity(IGraphService graphService, ILogger<ParticipantsActivity> log)
         {
-            _appConfiguration = configuration.Value;
+            _log = log;
+            _graphClient = graphService;
         }
 
         /// <summary>
@@ -29,25 +27,21 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <returns></returns>
         [FunctionName(Constants.GetParticipantsActivity)]
         public async Task<Models.Person[]> GetParticipantsAsync(
-            [ActivityTrigger] IDurableActivityContext context, ILogger log)
+            [ActivityTrigger] IDurableActivityContext context)
         {
 
             // retrieves the entity state from the orchestration
             var meetingRequest = context.GetInput<MeetingRequest>();
 
-
-            // Create a Graph Service client
-            var graphClient = new GraphService(meetingRequest.Token, log);
-
             // Initialize the graph client
-            graphClient.GetGraphServiceClient();
+            _graphClient.GetGraphServiceClient(meetingRequest.AccessToken, _log);
 
 
             // Create a new online meeting
-            var participants = await graphClient.GetParticipantsListAsync(meetingRequest);
+            var participants = await _graphClient.GetParticipantsListAsync(meetingRequest);
 
 
-            log.LogInformation($"Successfully retrieved the latest list of participants for the meeting with meeting Id: {meetingRequest.MeetingId}");
+            _log.LogInformation($"Successfully retrieved the latest list of participants for the meeting with meeting Id: {meetingRequest.MeetingId}");
  
             // Return the custom Chat Info entity
             return participants;
