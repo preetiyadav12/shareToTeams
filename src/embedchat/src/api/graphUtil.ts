@@ -58,6 +58,25 @@ export class GraphUtil {
   
         return resp.ok;
     };
+
+    public static sendChatMessage = async (token: string, chatId: string, message: string) => {
+        const payload = {
+            body: {
+                contentType: "html",
+                content: message
+            }
+        }
+        const resp = await fetch(`https://graph.microsoft.com/v1.0/chats/${chatId}/messages`, {
+            method: "POST",
+            headers: new Headers({
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json",
+            }),
+            body: JSON.stringify(payload),
+        });
+  
+        return resp.ok;
+    };
 }
 
   

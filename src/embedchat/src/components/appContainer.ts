@@ -6,6 +6,7 @@ import { ParticipantList } from "./participantList";
 import { Message } from "src/models/message";
 import { ChatItem } from "./chatItem";
 import { PeopleItem } from "./peopleItem";
+import { GraphUtil } from "../api/graphUtil";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -69,7 +70,8 @@ export class AppContainer extends HTMLElement {
     private mentionResults: Person[];
     private mentionInput: string;
     private personList: Person[];
-    constructor(messages:Message[], chatTitle: string, authInfo: AuthInfo) {
+    private chatId: string;
+    constructor(messages:Message[], chatTitle: string, authInfo: AuthInfo, chatId: string) {
         super();
         this.chatTitle = chatTitle;
         this.authInfo = authInfo;
@@ -79,6 +81,7 @@ export class AppContainer extends HTMLElement {
         this.mentionResults = [];
         this.mentionInput = "";
         this.personList = [];
+        this.chatId = chatId;
         this.render();
     }
 
@@ -95,8 +98,11 @@ export class AppContainer extends HTMLElement {
             chatItem.refresh(message);
         });
         
-        const chatContainer = <HTMLElement>this.querySelector(".teams-embed-chat-items");
-        chatContainer.appendChild(chatItem);
+        const chatItems = <HTMLElement>this.querySelector(".teams-embed-chat-items");
+        chatItems.appendChild(chatItem);
+
+        const chatContainer = (<HTMLElement>document.querySelector(".teams-embed-chat"))
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     };
 
     mentionSelected = (selectedIndex: number) => {
@@ -175,9 +181,10 @@ export class AppContainer extends HTMLElement {
         }
     }
 
-    sendMessage = () => {
+    sendMessage = async () => {
         const replaceEmptyDiv = "<div><br></div>";
         const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"))
+        if (input.textContent?.trim() === '') return;
         const person: Person = {
             id: "asdf",
             userPrincipalName: "asdf",
@@ -193,14 +200,9 @@ export class AppContainer extends HTMLElement {
             type: "asdf",
             createdOn: new Date()
         };
-        
-        const chatItem = new ChatItem(message, false);
-        const chatItems = (<HTMLElement>document.querySelector(".teams-embed-chat-items"));
-        chatItems.appendChild(chatItem);
-        
-        // scroll to the bottom of the div
-        const chatContainer = (<HTMLElement>document.querySelector(".teams-embed-chat"))
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // call graph to get matches
+        const results = await GraphUtil.sendChatMessage(this.authInfo.accessToken, this.chatId, input.innerHTML);
         input.innerHTML = "";
     }
 
@@ -241,8 +243,15 @@ export class AppContainer extends HTMLElement {
         
         // wire event to send message on ENTER
         (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
-            if (e.key == "Enter") {
+            if (e.key == "Enter" && !e.shiftKey) {
+                e.stopPropagation();
+                e.preventDefault();
+                const input = <HTMLElement>document.querySelector(".teams-embed-footer-input");
+                // the Enter button was pressed
+                // remove the last node which is an empty line break
+                input.lastChild?.remove();
                 this.sendMessage();
+                return;
             }
 
             // handle at mention
