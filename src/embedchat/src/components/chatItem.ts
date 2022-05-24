@@ -23,22 +23,18 @@ export class ChatItem extends HTMLElement {
     constructor(message: Message, isMe: boolean)  {
         super();
         const dom = <HTMLElement>template.content.cloneNode(true);
-        if (isMe)
-            (<HTMLElement>dom.querySelector(".teams-embed-chat-item")).className = "teams-embed-chat-item right";
-
         (<HTMLImageElement>dom.querySelector(".teams-embed-avatar-image")).src = message.sender.photo;
         (<HTMLElement>dom.querySelector(".teams-embed-chat-message-author")).innerText = message.sender.displayName;
         (<HTMLElement>dom.querySelector(".teams-embed-chat-message-timestamp")).innerText = message.createdOn.toLocaleString();
         (<HTMLElement>dom.querySelector(".teams-embed-chat-message-content")).innerHTML = message.message;
+
+        if (isMe) {
+            (<HTMLElement>dom.querySelector(".teams-embed-chat-item")).className = "teams-embed-chat-item right";
+            (<HTMLElement>dom.querySelector(".teams-embed-avatar-container")).remove();
+        }
+        
         this.appendChild(dom);
     }
-
-    refresh = (message:Message) => {
-        (<HTMLImageElement>this.querySelector(".teams-embed-avatar-image")).src = message.sender.photo;
-        (<HTMLElement>this.querySelector(".teams-embed-chat-message-author")).innerText = message.sender.displayName;
-        (<HTMLElement>this.querySelector(".teams-embed-chat-message-timestamp")).innerText = message.createdOn.toLocaleString();
-        (<HTMLElement>this.querySelector(".teams-embed-chat-message-content")).innerHTML = message.message;
-    };
 }
 
 customElements.define("chat-item", ChatItem);

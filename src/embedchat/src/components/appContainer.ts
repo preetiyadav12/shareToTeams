@@ -1,5 +1,5 @@
 import { PhotoUtil } from "../api/photoUtil";
-import { AuthInfo } from "src/models";
+import { AuthInfo, EntityState } from "src/models";
 import { AddParticipantDialog } from "./addParticipantDialog";
 import { Person } from "../models/person";
 import { ParticipantList } from "./participantList";
@@ -70,8 +70,8 @@ export class AppContainer extends HTMLElement {
     private mentionResults: Person[];
     private mentionInput: string;
     private personList: Person[];
-    private chatId: string;
-    constructor(messages:Message[], chatTitle: string, authInfo: AuthInfo, chatId: string) {
+    private entityState: EntityState;
+    constructor(messages:Message[], chatTitle: string, authInfo: AuthInfo, entityState: EntityState) {
         super();
         this.chatTitle = chatTitle;
         this.authInfo = authInfo;
@@ -81,7 +81,7 @@ export class AppContainer extends HTMLElement {
         this.mentionResults = [];
         this.mentionInput = "";
         this.personList = [];
-        this.chatId = chatId;
+        this.entityState = entityState;
         this.render();
     }
 
@@ -92,11 +92,11 @@ export class AppContainer extends HTMLElement {
 
     renderMessage = async (message:Message) => {
         message.sender.photo = this.photoUtil.emptyPic;
-        const chatItem:ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
         await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, message.sender.id).then((pic:string) => {
             message.sender.photo = pic;
-            chatItem.refresh(message);
+            //chatItem.refresh(message);
         });
+        const chatItem:ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
         
         const chatItems = <HTMLElement>this.querySelector(".teams-embed-chat-items");
         chatItems.appendChild(chatItem);
@@ -202,7 +202,7 @@ export class AppContainer extends HTMLElement {
         };
 
         // call graph to get matches
-        const results = await GraphUtil.sendChatMessage(this.authInfo.accessToken, this.chatId, input.innerHTML);
+        const results = await GraphUtil.sendChatMessage(this.authInfo.accessToken, this.entityState.chatInfo.threadId, input.innerHTML);
         input.innerHTML = "";
     }
 
@@ -213,8 +213,8 @@ export class AppContainer extends HTMLElement {
         // set chat title
         (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
     
-        // TODO: get participants
-        this.personList = getPartipicipants("");
+        // Concatenating owner and participants to create a list of all participants
+        this.personList = this.entityState.participants.concat(this.entityState.owner);// getPartipicipants("");
 
         // set participant count in header
         (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML = this.personList.length.toString();
