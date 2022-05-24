@@ -6,6 +6,7 @@ using Microsoft.Teams.EmbeddedChat.Models;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Teams.EmbeddedChat.Services
 {
@@ -152,19 +153,23 @@ namespace Microsoft.Teams.EmbeddedChat.Services
 
             try
             {
-                // Get the meeting data
-                var onlineMeeting = await _graphServiceClient.Users[meetingRequest.MeetingOwnerId]
-                    .OnlineMeetings[meetingRequest.MeetingId]
+                // Get the list of participants in the chat
+                var members = await _graphServiceClient.Users[meetingRequest.MeetingOwnerId]
+                    .Chats[meetingRequest.ChatInfo.ThreadId]
+                    .Members
                     .Request()
                     .GetAsync();
 
-                foreach (var participant in onlineMeeting.Participants.Attendees)
+                // Iterate thru the list of members excluding the chat owner
+                foreach (AadUserConversationMember member in members)
                 {
+                    if (member.UserId == meetingRequest.MeetingOwnerId)
+                        continue;
                     participants.Add(new Models.Person
                     {
-                        Id = participant.Identity.User.Id,
-                        UserPrincipalName = participant.Upn,
-                        DisplayName = participant.Identity.User.DisplayName,
+                        Id = member.UserId,
+                        UserPrincipalName = member.Email,
+                        DisplayName = member.DisplayName,
                     });
                 }
 

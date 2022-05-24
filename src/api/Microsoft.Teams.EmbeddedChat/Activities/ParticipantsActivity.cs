@@ -41,7 +41,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             var participants = await _graphClient.GetParticipantsListAsync(meetingRequest);
 
 
-            _log.LogInformation($"Successfully retrieved the latest list of participants for the meeting with meeting Id: {meetingRequest.MeetingId}");
+            _log.LogInformation($"Successfully retrieved the latest list of participants for the meeting with Chat Thread Id: {meetingRequest.ChatInfo.ThreadId}");
  
             // Return the custom Chat Info entity
             return participants;
