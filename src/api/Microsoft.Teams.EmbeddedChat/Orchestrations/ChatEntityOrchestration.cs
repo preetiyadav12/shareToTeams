@@ -56,7 +56,7 @@ namespace Microsoft.Teams.EmbeddedChat
                         {
                             var meetingRequest = new MeetingRequest
                             {
-                                MeetingId = entity.ChatInfo.MeetingId,
+                                ChatInfo = entity.ChatInfo,
                                 MeetingOwnerId = requestData.Owner.Id,
                                 AccessToken = orchestrationRequest.AccessToken
                             };
@@ -172,7 +172,7 @@ namespace Microsoft.Teams.EmbeddedChat
         {
             foreach (var person in source)
             {
-                if (target.Any(p => p.Id != person.Id))
+                if (target.Count(p => p.Id == person.Id) == 0)
                     return false;
             }
 

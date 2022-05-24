@@ -22,7 +22,7 @@ export class EmbeddedChat {
   private profilePics: Record<string, string> = {};
   private chatTopic = "Chat Topic Name";
   private waiting: Waiting;
-  private authResult?:AuthInfo;
+  private authResult?: AuthInfo;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -112,7 +112,7 @@ export class EmbeddedChat {
             alert("Failed to initialize a new chat!");
             return;
           }
-          
+
           element.removeChild(btn);
           await this.initializeChat(element, chatResponse, true);
         },
@@ -123,13 +123,12 @@ export class EmbeddedChat {
       });
       element.append(dialog);
       element.append(btn);
-    }
-    else {
+    } else {
       await this.initializeChat(element, entityState, false);
     }
   }
 
-  private initializeChat =  async (element: Element, entityState: EntityState, isNew: boolean) => {
+  private initializeChat = async (element: Element, entityState: EntityState, isNew: boolean) => {
     // Hide the waiting indicator
     this.waiting.hide();
 
@@ -146,14 +145,13 @@ export class EmbeddedChat {
 
     // establish the call
     const callClient = new CallClient({});
-    const callAgent = await callClient.createCallAgent(this.creds, {displayName: "My 3rd Party App"});
+    const callAgent = await callClient.createCallAgent(this.creds, { displayName: "My 3rd Party App" });
     const locator = { meetingLink: entityState.chatInfo.joinUrl };
     const meetingCall = callAgent.join(locator);
 
     // load the existing thread messages if this is an existing chat
     const messages: Message[] = [];
-    if (!isNew)
-    {
+    if (!isNew) {
       const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.chatInfo.threadId);
       console.log(chatThreadClient);
       for await (const chatMessage of chatThreadClient.listMessages()) {
@@ -165,12 +163,12 @@ export class EmbeddedChat {
             sender: {
               id: (<any>chatMessage).sender.microsoftTeamsUserId,
               displayName: chatMessage.senderDisplayName!,
-              photo: ""
+              photo: "",
             },
             threadId: entityState.chatInfo.threadId,
             type: chatMessage.type,
             version: chatMessage.version,
-            createdOn: chatMessage.createdOn
+            createdOn: chatMessage.createdOn,
           });
         }
       }
@@ -178,14 +176,14 @@ export class EmbeddedChat {
     }
 
     // inert the appComponent
-    const appComponent:AppContainer = new AppContainer(messages, "Hello World", this.authResult!, entityState);
+    const appComponent: AppContainer = new AppContainer(messages, "Hello World", this.authResult!, entityState);
     element.appendChild(appComponent);
 
     //hide waiting indicator to show UI
     this.waiting.hide();
 
     // listen for events
-    this.chatClient.on("chatMessageReceived", async (e:any) => {
+    this.chatClient.on("chatMessageReceived", async (e: any) => {
       console.log("TODO: chatMessageReceived");
       console.log(e);
 
@@ -196,12 +194,12 @@ export class EmbeddedChat {
         sender: {
           id: e.sender.microsoftTeamsUserId,
           displayName: e.senderDisplayName,
-          photo: ""
+          photo: "",
         },
         threadId: e.threadId,
         type: e.type,
         version: e.version,
-        createdOn: e.createdOn
+        createdOn: e.createdOn,
       });
     });
     this.chatClient.on("chatMessageEdited", async (e) => {
