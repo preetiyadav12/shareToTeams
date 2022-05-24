@@ -178,7 +178,7 @@ export class EmbeddedChat {
     }
 
     // inert the appComponent
-    const appComponent:AppContainer = new AppContainer(messages, "Hello World", this.authResult!, entityState.chatInfo.threadId);
+    const appComponent:AppContainer = new AppContainer(messages, "Hello World", this.authResult!, entityState);
     element.appendChild(appComponent);
 
     //hide waiting indicator to show UI
