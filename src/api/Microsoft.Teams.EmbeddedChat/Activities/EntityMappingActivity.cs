@@ -9,6 +9,7 @@ using Microsoft.Teams.EmbeddedChat.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Microsoft.Teams.EmbeddedChat.Activities
@@ -16,9 +17,11 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
     public class EntityMappingActivity
     {
         private readonly AppSettings _appConfiguration;
+        private readonly ILogger<EntityMappingActivity> _log;
 
-        public EntityMappingActivity(IOptions<AppSettings> configuration)
+        public EntityMappingActivity(IOptions<AppSettings> configuration, ILogger<EntityMappingActivity> log)
         {
+            _log = log;
             _appConfiguration = configuration.Value;
         }
 
@@ -29,14 +32,14 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <param name="log"></param>
         /// <returns></returns>
         [FunctionName(Constants.GetEntityStateActivity)]
-        public IEnumerable<EntityState> GetEntityStateAsync([ActivityTrigger] IDurableActivityContext context, ILogger log)
+        public IEnumerable<EntityState> GetEntityStateAsync([ActivityTrigger] IDurableActivityContext context)
         {
             List<EntityState> entityStates = new List<EntityState>();
 
             // retrieves the entity state from the orchestration
             var requestData = context.GetInput<ChatInfoRequest>();
 
-            log.LogInformation($"Activity {Constants.GetEntityStateActivity} has started.");
+            _log.LogInformation($"Activity {Constants.GetEntityStateActivity} has started.");
 
             try
             {
@@ -52,10 +55,10 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
                         Id = record.Id,
                         EntityId = record.EntityId,
                         IsSuccess = record.IsSuccess,
-                        Owner = JsonConvert.DeserializeObject<Person>(record.Owner),
-                        Participants = JsonConvert.DeserializeObject<Person[]>(record.Participants) ?? new List<Person>().ToArray(),
-                        ChatInfo = JsonConvert.DeserializeObject<ChatInfo>(record.ChatInfo),
-                        AcsInfo = JsonConvert.DeserializeObject<ACSInfo>(record.AcsInfo),
+                        Owner = Deserialize<Person>(record.Owner),
+                        Participants = DeserializeList<Person>(record.Participants).ToArray(),
+                        ChatInfo = Deserialize<ChatInfo>(record.ChatInfo),
+                        AcsInfo = Deserialize<ACSInfo>(record.AcsInfo),
                         CorrelationId = record.CorrelationId
                     });
                 }
@@ -64,7 +67,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             }
             catch (System.Exception e)
             {
-                log.LogError(e.Message);
+                _log.LogError(e.Message);
                 throw;
             }
         }
@@ -76,16 +79,16 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <param name="log"></param>
         /// <returns></returns>
         [FunctionName(Constants.CreateEntityStateActivity)]
-        public async Task<bool> CreateEntityStateActivity([ActivityTrigger] IDurableActivityContext context, ILogger log)
+        public async Task<bool> CreateEntityStateActivity([ActivityTrigger] IDurableActivityContext context)
         {
-            log.LogInformation($"Activity {Constants.CreateEntityStateActivity} has started.");
+            _log.LogInformation($"Activity {Constants.CreateEntityStateActivity} has started.");
 
             // retrieves the entity state from the orchestration
             var entityState = context.GetInput<EntityState>();
 
             if (entityState == null)
             {
-                log.LogWarning("Entity State cannot be null.");
+                _log.LogWarning("Entity State cannot be null.");
                 return false;
             }
 
@@ -116,7 +119,7 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             }
             catch (Exception e)
             {
-                log.LogError(e.Message);
+                _log.LogError(e.Message);
                 throw;
             }
         }
@@ -128,9 +131,9 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <param name="log"></param>
         /// <returns></returns>
         [FunctionName(Constants.UpdateEntityStateActivity)]
-        public async Task<(bool updateStatus, EntityState updatedState)> UpdateEntityStateAsync([ActivityTrigger] IDurableActivityContext context, ILogger log)
+        public async Task<(bool updateStatus, EntityState updatedState)> UpdateEntityStateAsync([ActivityTrigger] IDurableActivityContext context)
         {
-            log.LogInformation($"Activity {Constants.UpdateEntityStateActivity} has started.");
+            _log.LogInformation($"Activity {Constants.UpdateEntityStateActivity} has started.");
 
             // retrieves the entity from the orchestration
             var entityState = context.GetInput<EntityState>();
@@ -174,9 +177,27 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             }
             catch (Exception e)
             {
-                log.LogError(e.Message);
+                _log.LogError(e.Message);
                 return (false, entityState);
             }
         }
+
+
+        private T Deserialize<T>(string json) where T : new()
+        {
+            if (string.IsNullOrEmpty(json))
+                return new T();
+
+            return JsonConvert.DeserializeObject<T>(json);
+        }
+
+        private IEnumerable<T> DeserializeList<T>(string json) where T : new()
+        {
+            if (string.IsNullOrEmpty(json))
+                return new List<T>();
+
+            return JsonConvert.DeserializeObject<List<T>>(json);
+        }
+
     }
 }

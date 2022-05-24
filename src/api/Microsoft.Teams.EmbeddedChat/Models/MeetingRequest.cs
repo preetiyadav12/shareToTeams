@@ -5,7 +5,7 @@ namespace Microsoft.Teams.EmbeddedChat.Models
 	{
         public string MeetingId { get; set; }
         public string MeetingOwnerId { get; set; }
-        public string Token { get; set; }
+        public string AccessToken { get; set; }
     }
 }
 

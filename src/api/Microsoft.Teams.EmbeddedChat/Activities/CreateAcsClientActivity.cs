@@ -5,9 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Teams.EmbeddedChat.ACS;
 using Microsoft.Teams.EmbeddedChat.Models;
-using Microsoft.Teams.EmbeddedChat.Utils;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
@@ -16,9 +14,11 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
 	public class CreateAcsClientActivity
 	{
 		private readonly AppSettings _appConfiguration;
+        private readonly ILogger<CreateAcsClientActivity> _log;
 
-        public CreateAcsClientActivity(IOptions<AppSettings> configuration)
+        public CreateAcsClientActivity(IOptions<AppSettings> configuration, ILogger<CreateAcsClientActivity> log)
         {
+            _log = log;
             _appConfiguration = configuration.Value;
         }
 
@@ -29,9 +29,9 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
         /// <param name="log"></param>
         /// <returns></returns>
         [FunctionName(Constants.CreateACSClientActivity)]
-        public async Task<ACSInfo> CreateACSClientActivity([ActivityTrigger] IDurableActivityContext context, ILogger log)
+        public async Task<ACSInfo> CreateACSClientActivity([ActivityTrigger] IDurableActivityContext context)
         {
-            log.LogInformation($"Activity {Constants.CreateACSClientActivity} has started.");
+            _log.LogInformation($"Activity {Constants.CreateACSClientActivity} has started.");
 
             try
             {
@@ -56,7 +56,8 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
             }
             catch (Exception e)
             {
-                log.LogError(e.Message);
+                _log.LogError(e.Message);
+                throw;
             }
 
             return null;

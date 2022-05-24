@@ -29,8 +29,15 @@ namespace Microsoft.Teams.EmbeddedChat
             IDurableOrchestrationClient client)
         {
             _log.LogInformation($"Started orchestration Instance Id: '{requestData.Id}' for the Api Operation Id: {operation} and Entity ID: '{requestData.EntityId}'.");
-            var orchestrationRequest = new OrchestrationRequest { Operation = operation, Request = requestData };
 
+            // Construct the orchestration request data
+            var orchestrationRequest = new OrchestrationRequest { 
+                Operation = operation, 
+                Request = requestData,
+                AccessToken = request.Headers.Authorization.Parameter // extract access token from the header
+            };
+
+            // Start new orchestration for the requested flow
             requestData.Id = await client.StartNewAsync(Constants.Orchestration, orchestrationRequest);
 
             TimeSpan timeout = TimeSpan.FromSeconds(Constants.Timeout);

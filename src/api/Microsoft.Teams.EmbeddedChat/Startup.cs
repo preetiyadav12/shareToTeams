@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Teams.EmbeddedChat.Activities;
 using System;
 using Azure.Identity;
+using Microsoft.Teams.EmbeddedChat.Services;
 
 [assembly: FunctionsStartup(typeof(Startup))]
 
@@ -26,6 +27,12 @@ namespace Microsoft.Teams.EmbeddedChat
             builder.Services.AddScoped<CreateAcsClientActivity>();
             builder.Services.AddScoped<ParticipantsActivity>();
             builder.Services.AddScoped<Processing>();
+
+            //Add DI services
+            builder.Services.AddSingleton<IGraphService>((s) =>
+            {
+                return new GraphService();
+            });
         }
 
         public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)
