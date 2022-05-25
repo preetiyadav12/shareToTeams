@@ -700,3 +700,11 @@
 .teams-embed-mention-user {
   color: rgb(91, 95, 199);
 }
+
+.error-container {
+  background: #424242;
+  color: #fff;
+  padding: .3rem .2rem .2rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
