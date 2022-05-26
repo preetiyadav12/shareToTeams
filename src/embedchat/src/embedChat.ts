@@ -2,7 +2,7 @@ import { ChatClient, ChatMessage as CM } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
 import { CallClient } from "@azure/communication-calling";
 import { v4 as uuidv4 } from "uuid";
-import { AuthInfo, EntityState } from "./models";
+import { AuthInfo, EntityState, EmbedChatConfig } from "./models";
 import { AuthUtil } from "./api/authUtil";
 import { AppSettings } from "./config/appSettings";
 import { EntityApi } from "./api/entityMapping";
@@ -43,9 +43,10 @@ export class EmbeddedChat {
     return msg;
   };
 
-  public async renderEmbed(element: Element, entityId: string) {
+  public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
     console.log(`HTML Element: ${element.id}`);
-    console.log(`Entity Id: ${entityId}`);
+    console.log(`Entity Id: ${embedChatConfig.entityId}`);
+    const entityId = embedChatConfig.entityId;
 
     // add waiting indicator to UI and display it while we authenticate and check for mapping
     element.appendChild(this.waiting);
