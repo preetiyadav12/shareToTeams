@@ -3,11 +3,11 @@ import { ChatInfoRequest, EntityState } from "../models";
 
 export class EntityApi {
   private readonly config: AppSettings;
-  private readonly idToken: string;
+  private readonly appAccessToken: string;
 
-  constructor(config: AppSettings, idToken: string) {
+  constructor(config: AppSettings, appAccessToken: string) {
     this.config = config;
-    this.idToken = idToken;
+    this.appAccessToken = appAccessToken;
 
     console.log(`API Base Url: ${this.config.apiBaseUrl}`);
   }
@@ -20,7 +20,7 @@ export class EntityApi {
     const requestOptions = {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${this.idToken}`,
+        Authorization: `Bearer ${this.appAccessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(chatInfoRequest),
@@ -52,7 +52,7 @@ export class EntityApi {
     const requestOptions = {
       method: "POST",
       headers: new Headers({
-        Authorization: `Bearer ${this.idToken}`,
+        Authorization: `Bearer ${this.appAccessToken}`,
         "Content-Type": "application/json",
       }),
       body: JSON.stringify(chatInfoRequest),
