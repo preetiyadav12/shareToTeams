@@ -88,7 +88,13 @@ namespace Microsoft.Teams.EmbeddedChat.Activities
 
             if (entityState == null)
             {
-                _log.LogWarning("Entity State cannot be null.");
+                _log.LogError("Entity State cannot be null.");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(entityState.EntityId))
+            {
+                _log.LogError("Entity Id cannot be null!");
                 return false;
             }
 

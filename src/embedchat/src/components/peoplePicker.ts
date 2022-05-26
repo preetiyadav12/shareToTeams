@@ -28,111 +28,120 @@ template.innerHTML = `
 
 //TODO: needs exclude list for existing members
 export class PeoplePicker extends HTMLElement {
-    private authInfo:AuthInfo;
-    private searchResults:Person[];
-    private selections:Person[];
-    private photoUtil:PhotoUtil;
-    constructor(authInfo:AuthInfo, photoUtil:PhotoUtil) {
-        super();
-        this.authInfo = authInfo;
-        this.photoUtil = photoUtil;
-        this.searchResults = [];
-        this.selections = [];
-        this.render();
-    }
+  private authInfo: AuthInfo;
+  private searchResults: Person[];
+  private selections: Person[];
+  private photoUtil: PhotoUtil;
+  constructor(authInfo: AuthInfo, photoUtil: PhotoUtil) {
+    super();
+    this.authInfo = authInfo;
+    this.photoUtil = photoUtil;
+    this.searchResults = [];
+    this.selections = [];
+    this.render();
+  }
 
-    getSelections = () => {
-        return this.selections;
-    };
+  getSelections = () => {
+    return this.selections;
+  };
 
-    personSelected = (selectedIndex:number) => {
-        console.log(selectedIndex);
+  personSelected = (selectedIndex: number) => {
+    console.log(selectedIndex);
 
-        const input = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-ctrl"));
-        const suggestionContainer = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-suggestions"));
-        const picker = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-wrapper"));
-        const inputOuter = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input"));
-        
-        input.innerText = "";
-        suggestionContainer.style.display = "none";
-        const selection:Person = this.searchResults[selectedIndex];
-        this.selections.push(selection);
-        this.searchResults = [];
+    const input = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-ctrl");
+    const suggestionContainer = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-suggestions");
+    const picker = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-wrapper");
+    const inputOuter = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-input");
 
-        const insertIndex = this.selections.length - 1;
-        picker.insertBefore(
-            new PeoplePickerSelection(selection, insertIndex, this.personRemoved.bind(this, selection)), inputOuter);
-    };
+    input.innerText = "";
+    suggestionContainer.style.display = "none";
+    const selection: Person = this.searchResults[selectedIndex];
+    this.selections.push(selection);
+    this.searchResults = [];
 
-    personRemoved = (selection:Person) => {
-        const picker = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-wrapper"));
-        const index = this.selections.indexOf(selection);
-        this.selections.splice(index, 1);
-        picker.removeChild(picker.children[index]);
-    };
+    const insertIndex = this.selections.length - 1;
+    picker.insertBefore(
+      new PeoplePickerSelection(selection, insertIndex, this.personRemoved.bind(this, selection)),
+      inputOuter,
+    );
+  };
 
-    render = () => {
-        const dom = <HTMLElement>template.content.cloneNode(true);
-        //TODO: keydown for ENTER and TAB
-        (<HTMLElement>dom.querySelector(".teams-embed-peoplepicker-input-ctrl")).addEventListener("keyup", async (evt:any) => {
-            // get the suggestions pane DOM elements
-            const suggestionContainer = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-suggestions"));
-            const waiting = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-waiting"));
-            const noresults = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-noresults"));
-            const input = (<HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-ctrl"));
-            
-            // check what to do
-            if (evt.key == "Escape" || evt.key == "TAB") {
-                // close the suggestions
-                this.searchResults = [];
-                suggestionContainer.style.display = "none";
-                waiting.style.display = "none";
-                noresults.style.display = "none";
-                input.innerText = "";
+  personRemoved = (selection: Person) => {
+    const picker = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-wrapper");
+    const index = this.selections.indexOf(selection);
+    this.selections.splice(index, 1);
+    picker.removeChild(picker.children[index]);
+  };
+
+  render = () => {
+    const dom = <HTMLElement>template.content.cloneNode(true);
+    //TODO: keydown for ENTER and TAB
+    (<HTMLElement>dom.querySelector(".teams-embed-peoplepicker-input-ctrl")).addEventListener(
+      "keyup",
+      async (evt: any) => {
+        // get the suggestions pane DOM elements
+        const suggestionContainer = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-suggestions");
+        const waiting = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-waiting");
+        const noresults = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-noresults");
+        const input = <HTMLElement>document.querySelector(".teams-embed-peoplepicker-input-ctrl");
+
+        // check what to do
+        if (evt.key == "Escape" || evt.key == "TAB") {
+          // close the suggestions
+          this.searchResults = [];
+          suggestionContainer.style.display = "none";
+          waiting.style.display = "none";
+          noresults.style.display = "none";
+          input.innerText = "";
+        } else if (input.innerText.length > 1) {
+          // display suggestions container and waiting indicator
+          suggestionContainer.style.display = "block";
+          waiting.style.display = "block";
+
+          // call graph to get matches
+          const results = await GraphUtil.searchPeople(this.authInfo.accessToken, input.innerText);
+
+          // clear any old suggestions
+          while (suggestionContainer.children.length > 2) {
+            suggestionContainer.removeChild(suggestionContainer.children[0]);
+          }
+
+          // parse the results
+          this.searchResults = [];
+          const selectedIds = this.selections.map((p: Person) => {
+            return p.id;
+          });
+          results.forEach((obj: any, i: number) => {
+            if (selectedIds.indexOf(obj.id) === -1) {
+              const person: Person = {
+                id: obj.id,
+                displayName: obj.displayName,
+                userPrincipalName: obj.userPrincipalName,
+                photo: this.photoUtil.emptyPic,
+              };
+              this.searchResults.push(person);
+              const peopleItem = new PeopleItem(person, i, this.personSelected.bind(this, i));
+              suggestionContainer.insertBefore(peopleItem, waiting);
+              this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, person.id).then((pic: string) => {
+                person.photo = pic;
+                peopleItem.refresh(person);
+              });
             }
-            else if (input.innerText.length > 1) {
-                // display suggestions container and waiting indicator
-                suggestionContainer.style.display = "block";
-                waiting.style.display = "block";
-                
-                // call graph to get matches
-                const results = await GraphUtil.searchPeople(this.authInfo.accessToken, input.innerText);
+          });
 
-                // clear any old suggestions
-                while (suggestionContainer.children.length > 2) {
-                    suggestionContainer.removeChild(suggestionContainer.children[0]);
-                }
+          // show no results if empty
+          if (this.searchResults.length === 0) {
+            noresults.style.display = "block";
+          }
 
-                // parse the results
-                this.searchResults = [];
-                const selectedIds = this.selections.map((p:Person, i:number) => {
-                    return p.id;
-                });
-                results.forEach((obj:any, i:number) => {
-                    if (selectedIds.indexOf(obj.id) === -1) {
-                        const person:Person = { id: obj.id, displayName: obj.displayName, userPrincipalName: obj.userPrincipalName, photo: this.photoUtil.emptyPic };
-                        this.searchResults.push(person);
-                        const peopleItem = new PeopleItem(person, i, this.personSelected.bind(this, i));
-                        suggestionContainer.insertBefore(peopleItem, waiting);
-                        this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, person.id).then((pic:string) => {
-                            person.photo = pic;
-                            peopleItem.refresh(person);
-                        });
-                    }
-                });
+          // update the UI
+          waiting.style.display = "none";
+        }
+      },
+    );
 
-                // show no results if empty
-                if (this.searchResults.length === 0) {
-                    noresults.style.display = "block";
-                }
-
-                // update the UI
-                waiting.style.display = "none";
-            }
-        });
-        
-        this.appendChild(dom);
-    }
+    this.appendChild(dom);
+  };
 }
 
 customElements.define("people-picker", PeoplePicker);

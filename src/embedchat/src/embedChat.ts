@@ -1,4 +1,4 @@
-import { ChatClient, ChatMessage as CM } from "@azure/communication-chat";
+import { ChatClient } from "@azure/communication-chat";
 import { AzureCommunicationTokenCredential } from "@azure/communication-common";
 import { CallClient } from "@azure/communication-calling";
 import { v4 as uuidv4 } from "uuid";
@@ -14,15 +14,17 @@ import { AddParticipantDialog } from "./components/addParticipantDialog";
 import { Person } from "./models/person";
 import { AppContainer } from "./components/appContainer";
 import { Message } from "./models/message";
+import { GraphUtil } from "./api/graphUtil";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
   private creds?: AzureCommunicationTokenCredential;
   private chatClient?: ChatClient;
-  private profilePics: Record<string, string> = {};
+  // private profilePics: Record<string, string> = {};
   private chatTopic = "Chat Topic Name";
   private waiting: Waiting;
   private authResult?: AuthInfo;
+  private topHistoryMessages = 50;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -44,9 +46,13 @@ export class EmbeddedChat {
   };
 
   public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
+    const entityId = embedChatConfig.entityId;
+    this.chatTopic = embedChatConfig.topicName ?? this.chatTopic;
+    this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
+
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${embedChatConfig.entityId}`);
-    const entityId = embedChatConfig.entityId;
+    console.log(`Topic Name: ${this.chatTopic}`);
 
     // add waiting indicator to UI and display it while we authenticate and check for mapping
     element.appendChild(this.waiting);
@@ -150,30 +156,46 @@ export class EmbeddedChat {
     const locator = { meetingLink: entityState.chatInfo.joinUrl };
     const meetingCall = callAgent.join(locator);
 
+    console.log(`Meeting call Id: ${meetingCall.id}`);
+
     // load the existing thread messages if this is an existing chat
     const messages: Message[] = [];
     if (!isNew) {
-      const chatThreadClient = await this.chatClient.getChatThreadClient(entityState.chatInfo.threadId);
-      console.log(chatThreadClient);
-      for await (const chatMessage of chatThreadClient.listMessages()) {
-        console.log(chatMessage);
-        if (chatMessage.type == "html") {
+      const chatHistory = await GraphUtil.getChatMessages(
+        this.authResult?.accessToken as string,
+        entityState.chatInfo.threadId,
+        this.authResult?.uniqueId as string,
+        this.topHistoryMessages,
+      );
+
+      let messageCount = 0;
+      chatHistory.map((m) => {
+        if (m.messageType === "message") {
           messages.push({
-            id: chatMessage.id,
-            message: (<any>chatMessage).content.message,
+            id: m.id,
+            message: m.body.content,
             sender: {
-              id: (<any>chatMessage).sender.microsoftTeamsUserId,
-              displayName: chatMessage.senderDisplayName!,
+              id: m.from.user.id,
+              displayName: m.from.user.displayName,
               photo: "",
             },
-            threadId: entityState.chatInfo.threadId,
-            type: chatMessage.type,
-            version: chatMessage.version,
-            createdOn: chatMessage.createdOn,
+            threadId: m.chatId,
+            type: m.messageType,
+            version: m.etag,
+            createdOn: m.createdDateTime,
           });
+
+          messageCount += 1;
         }
-      }
-      console.log(messages);
+      });
+      console.log(`Fetched ${messageCount} messages`);
+
+      // After all the messages were retrieved,
+      // we'll reverse the order to make them chronologically
+      messages.reverse();
+      messages.forEach((m) => {
+        console.log(m.message);
+      });
     }
 
     // inert the appComponent
