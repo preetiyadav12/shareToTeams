@@ -164,9 +164,9 @@ export class EmbeddedChat {
     const messages: Message[] = [];
     if (!isNew) {
       const chatHistory = await GraphUtil.getChatMessages(
-        this.graphAuthResult.accessToken as string,
+        this.graphAuthResult?.accessToken as string,
         entityState.chatInfo.threadId,
-        this.appAuthResult.uniqueId as string,
+        this.appAuthResult?.uniqueId as string,
         this.topHistoryMessages,
       );
 
