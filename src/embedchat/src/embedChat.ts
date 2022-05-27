@@ -20,11 +20,12 @@ export class EmbeddedChat {
   private readonly appSettings: AppSettings;
   private creds?: AzureCommunicationTokenCredential;
   private chatClient?: ChatClient;
-  // private profilePics: Record<string, string> = {};
-  private chatTopic = "Chat Topic Name";
+  private profilePics: Record<string, string> = {};
   private waiting: Waiting;
   private authResult?: AuthInfo;
   private topHistoryMessages = 50;
+  private graphAuthResult?: AuthInfo;
+  private appAuthResult?: AuthInfo;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -47,34 +48,36 @@ export class EmbeddedChat {
 
   public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
     const entityId = embedChatConfig.entityId;
-    this.chatTopic = embedChatConfig.topicName ?? this.chatTopic;
     this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
 
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${embedChatConfig.entityId}`);
-    console.log(`Topic Name: ${this.chatTopic}`);
 
     // add waiting indicator to UI and display it while we authenticate and check for mapping
     element.appendChild(this.waiting);
     this.waiting.show();
-    this.authResult = await AuthUtil.acquireToken(element, this.appSettings, this.waiting);
-    console.log(this.authResult);
-    if (!this.authResult) {
-      console.log("authResult cannot be null!");
+
+    // get graph token and then application token
+    this.graphAuthResult = await AuthUtil.acquireToken(element, AuthUtil.graphDefaultScope, this.appSettings, this.waiting);
+    console.log(this.graphAuthResult);
+    if (!this.graphAuthResult) {
+      console.log("graphAuthResult cannot be null!");
       return;
     }
 
-    console.log(`User Id: ${this.authResult.uniqueId}`);
-    console.log(`Graph Token: ${this.authResult.accessToken}`);
-    console.log(`Id Token: ${this.authResult.idToken}`);
-    console.log(`Token Expires On: ${this.authResult.expiresOn}`);
+    this.appAuthResult = await AuthUtil.acquireToken(element, `api://${this.appSettings.clientId}/access_as_user`, this.appSettings, this.waiting);
+    console.log(this.appAuthResult);
+    if (!this.appAuthResult) {
+      console.log("appAuthResult cannot be null!");
+      return;
+    }
 
     console.log(`Trying to get Entity Mapping. Calling ${this.appSettings.apiBaseUrl}/getMapping`);
-    const entityApi = new EntityApi(this.appSettings, this.authResult.idToken);
+    const entityApi = new EntityApi(this.appSettings, this.appAuthResult.accessToken);
     const chatOwner: Person = {
-      id: this.authResult.uniqueId,
-      userPrincipalName: this.authResult.account.username,
-      displayName: this.authResult.account.name,
+      id: this.appAuthResult.uniqueId,
+      userPrincipalName: this.appAuthResult.account.username,
+      displayName: this.appAuthResult.account.name,
       photo: "",
     };
 
@@ -82,8 +85,7 @@ export class EmbeddedChat {
     const chatRequest: ChatInfoRequest = {
       entityId,
       owner: chatOwner,
-      accessToken: this.authResult.accessToken,
-      topic: this.chatTopic,
+      topic: (embedChatConfig.topicName) ? embedChatConfig.topicName : `Chat for ${entityId}`,
       participants: [],
       correlationId: uuidv4(),
       isSuccess: false,
@@ -98,13 +100,13 @@ export class EmbeddedChat {
       return;
     }
     if (!entityState) {
-      // alert(`No entity mapping found for this entity: ${entityId}`);
+      // No mapping exists for entityId. Check for autoStart or prompt
       // TODO: check autoStart value
       this.waiting.hide();
 
       const photoUtil: PhotoUtil = new PhotoUtil();
       const dialog: AddParticipantDialog = new AddParticipantDialog(
-        this.authResult,
+        this.graphAuthResult,
         photoUtil,
         async (participants: Person[]) => {
           console.log(participants);
@@ -162,9 +164,9 @@ export class EmbeddedChat {
     const messages: Message[] = [];
     if (!isNew) {
       const chatHistory = await GraphUtil.getChatMessages(
-        this.authResult?.accessToken as string,
+        this.graphAuthResult.accessToken as string,
         entityState.chatInfo.threadId,
-        this.authResult?.uniqueId as string,
+        this.appAuthResult.uniqueId as string,
         this.topHistoryMessages,
       );
 
@@ -199,7 +201,7 @@ export class EmbeddedChat {
     }
 
     // inert the appComponent
-    const appComponent: AppContainer = new AppContainer(messages, "Hello World", this.authResult!, entityState);
+    const appComponent: AppContainer = new AppContainer(messages, "TODO: Hello World", this.graphAuthResult!, entityState);
     element.appendChild(appComponent);
 
     //hide waiting indicator to show UI
