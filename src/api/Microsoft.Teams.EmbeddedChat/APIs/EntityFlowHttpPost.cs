@@ -44,10 +44,10 @@ namespace Microsoft.Teams.EmbeddedChat.APIs
             if (request.Headers.Authorization.Count == 0)
                 return new UnauthorizedObjectResult("Authorization Header is missing");
 
-            var (authenticationStatus, authenticationResponse) =
-                await request.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus)
-                return authenticationResponse;
+            //var (authenticationStatus, authenticationResponse) =
+            //    await request.HttpContext.AuthenticateAzureFunctionAsync();
+            //if (!authenticationStatus)
+            //    return authenticationResponse;
 
             string name = request.HttpContext.User.Identity.IsAuthenticated ? request.HttpContext.User.GetDisplayName() : null;
 
