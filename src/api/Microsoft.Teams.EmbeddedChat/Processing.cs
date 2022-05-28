@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Teams.EmbeddedChat.Models;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -25,7 +27,7 @@ namespace Microsoft.Teams.EmbeddedChat
         public async Task<IActionResult> ProcessFlow(
             ApiOperation operation,
             ChatInfoRequest requestData,
-            HttpRequestMessage request,
+            HttpRequest request,
             IDurableOrchestrationClient client)
         {
             _log.LogInformation($"Started orchestration Instance Id: '{requestData.Id}' for the Api Operation Id: {operation} and Entity ID: '{requestData.EntityId}'.");
@@ -34,7 +36,7 @@ namespace Microsoft.Teams.EmbeddedChat
             var orchestrationRequest = new OrchestrationRequest { 
                 Operation = operation, 
                 Request = requestData,
-                AccessToken = request.Headers.Authorization.Parameter // extract access token from the header
+                AccessToken = ExtractJWToken(request.Headers.Authorization[0]) // extract access token from the header
             };
 
             // Start new orchestration for the requested flow
@@ -82,6 +84,13 @@ namespace Microsoft.Teams.EmbeddedChat
             }
 
             return new OkObjectResult(completeResponseData);
+        }
+
+
+        private static string ExtractJWToken(string authorization)
+        {
+            return authorization.StartsWith("Bearer") ? authorization.Split(" ").Last() :
+                authorization;
         }
     }
 }

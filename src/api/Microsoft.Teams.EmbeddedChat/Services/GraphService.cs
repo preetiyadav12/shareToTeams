@@ -177,6 +177,8 @@ namespace Microsoft.Teams.EmbeddedChat.Services
             }
             catch (Exception e)
             {
+                if (e.InnerException != null)
+                    _logger.LogError(e.InnerException.Message);
                 _logger.LogError(e.Message);
                 throw;
             }
