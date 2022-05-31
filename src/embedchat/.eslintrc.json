@@ -5,17 +5,16 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint",
-    "no-loops"
-  ],
+  "plugins": ["@typescript-eslint", "no-loops"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
-    "no-loops/no-loops": 0
+    "no-loops/no-loops": 0,
+    "@typescript-eslint/no-explicit-any": ["off"],
+    "@typescript-eslint/no-non-null-assertion": ["off"]
   },
   "settings": {
     "react": {

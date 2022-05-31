@@ -61,205 +61,215 @@ template.innerHTML = `
     </div>`;
 
 export class AppContainer extends HTMLElement {
-    private chatTitle: string;
-    private authInfo: AuthInfo;
-    private photoUtil: PhotoUtil;
-    private dialog:AddParticipantDialog;
-    private participantList?:ParticipantList;
-    private messages:Message[];
-    private mentionResults: Person[];
-    private mentionInput: string;
-    private personList: Person[];
-    private entityState: EntityState;
-    constructor(messages:Message[], chatTitle: string, authInfo: AuthInfo, entityState: EntityState) {
-        super();
-        this.chatTitle = chatTitle;
-        this.authInfo = authInfo;
-        this.photoUtil = new PhotoUtil();
-        this.dialog =  new AddParticipantDialog(this.authInfo, this.photoUtil);
-        this.messages = messages;
-        this.mentionResults = [];
-        this.mentionInput = "";
-        this.personList = [];
-        this.entityState = entityState;
-        this.render();
+  private chatTitle: string;
+  private authInfo: AuthInfo;
+  private photoUtil: PhotoUtil;
+  private dialog: AddParticipantDialog;
+  private participantList?: ParticipantList;
+  private messages: Message[];
+  private mentionResults: Person[];
+  private mentionInput: string;
+  private personList: Person[];
+  private entityState: EntityState;
+  constructor(messages: Message[], chatTitle: string, authInfo: AuthInfo, entityState: EntityState) {
+    super();
+    this.chatTitle = chatTitle;
+    this.authInfo = authInfo;
+    this.photoUtil = new PhotoUtil();
+    this.dialog = new AddParticipantDialog(this.authInfo, this.photoUtil);
+    this.messages = messages;
+    this.mentionResults = [];
+    this.mentionInput = "";
+    this.personList = [];
+    this.entityState = entityState;
+    this.render();
+  }
+
+  messageReceived = async (message: Message) => {
+    await this.renderMessage(message);
+    this.messages.push(message);
+  };
+
+  renderMessage = async (message: Message) => {
+    message.sender.photo = this.photoUtil.emptyPic;
+    await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, message.sender.id).then((pic: string) => {
+      message.sender.photo = pic;
+      //chatItem.refresh(message);
+    });
+    const chatItem: ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
+
+    const chatItems = <HTMLElement>this.querySelector(".teams-embed-chat-items");
+    chatItems.appendChild(chatItem);
+
+    const chatContainer = <HTMLElement>document.querySelector(".teams-embed-chat");
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  };
+
+  mentionSelected = (selectedIndex: number) => {
+    const selectedUser = this.mentionResults[selectedIndex];
+    const input = <HTMLElement>document.querySelector(".teams-embed-footer-input");
+    const atMentionHtml = `<readonly class="teams-embed-mention-user" contenteditable="false" userId="${selectedUser.id}">${selectedUser.displayName}</readonly>&ZeroWidthSpace;`;
+    const inputHtml = input.innerHTML.replace("@" + this.mentionInput, atMentionHtml);
+    input.innerHTML = inputHtml;
+
+    // close mention dialog and clear results
+    const mentionContainer = <HTMLElement>document.querySelector(".teams-embed-input-mention-container");
+    mentionContainer.style.display = "none";
+    this.mentionResults = [];
+  };
+
+  populateMentionContainer = (results: Person[]) => {
+    const mentionContainer = <HTMLElement>document.querySelector(".teams-embed-input-mention-container");
+    mentionContainer.innerHTML = "";
+    this.mentionResults = [];
+    results.forEach((person: Person, i: number) => {
+      this.mentionResults.push(person);
+      const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
+      mentionContainer.appendChild(peopleItem);
+    });
+
+    mentionContainer.style.display = "block";
+  };
+
+  clearMentionContainer = () => {
+    this.mentionResults = [];
+    (<HTMLElement>document.querySelector(".teams-embed-input-mention-container")).style.display = "none";
+  };
+
+  createAtMention = (evt: KeyboardEvent) => {
+    // close mention results window if hit escape
+    if (evt.key == "Escape") {
+      this.clearMentionContainer();
+      return;
     }
 
-    messageReceived = async (message:Message) => {
-        await this.renderMessage(message);
-        this.messages.push(message);
-    };
-
-    renderMessage = async (message:Message) => {
-        message.sender.photo = this.photoUtil.emptyPic;
-        await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, message.sender.id).then((pic:string) => {
-            message.sender.photo = pic;
-            //chatItem.refresh(message);
-        });
-        const chatItem:ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
-        
-        const chatItems = <HTMLElement>this.querySelector(".teams-embed-chat-items");
-        chatItems.appendChild(chatItem);
-
-        const chatContainer = (<HTMLElement>document.querySelector(".teams-embed-chat"))
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    };
-
-    mentionSelected = (selectedIndex: number) => {
-        const selectedUser = this.mentionResults[selectedIndex];
-        const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"));
-        const atMentionHtml = `<readonly class="teams-embed-mention-user" contenteditable="false" userId="${selectedUser.id}">${selectedUser.displayName}</readonly>&ZeroWidthSpace;`;
-        const inputHtml = input.innerHTML.replace("@"+this.mentionInput, atMentionHtml);
-        input.innerHTML = inputHtml;
-        
-        // close mention dialog and clear results
-        const mentionContainer = (<HTMLElement>document.querySelector(".teams-embed-input-mention-container"));
-        mentionContainer.style.display = "none";
-        this.mentionResults = [];
-    };
-
-    populateMentionContainer = (results: Person[]) => {
-        const mentionContainer = (<HTMLElement>document.querySelector(".teams-embed-input-mention-container"));
-        mentionContainer.innerHTML = "";
-        this.mentionResults = [];
-        results.forEach((person: Person, i: number) => {                
-            this.mentionResults.push(person);
-            const peopleItem = new PeopleItem(person, i, this.mentionSelected.bind(this, i));
-            mentionContainer.appendChild(peopleItem);
-        });
-
-        mentionContainer.style.display = "block";
+    const sel: any = window.getSelection();
+    // if not input return
+    if (sel.anchorNode.nodeValue == null) {
+      this.clearMentionContainer();
+      return;
     }
 
-    clearMentionContainer = () => {
-        this.mentionResults = [];
-        (<HTMLElement>document.querySelector(".teams-embed-input-mention-container")).style.display = "none";
-    }
+    // if the last character is '@', load the full participant list
+    if (sel.anchorNode.nodeValue[sel.focusOffset - 1] === "@") {
+      this.populateMentionContainer(this.personList);
+    } else {
+      // get the text from the start of the node up to the cursor focus
+      const inputToFocus = sel.anchorNode.nodeValue.substring(0, sel.focusOffset);
+      // get the last index of '@', there could be multiple @
+      const atIndex = inputToFocus.lastIndexOf("@") + 1;
+      if (atIndex == 0) {
+        this.clearMentionContainer();
+        return;
+      }
 
-    createAtMention = (evt: KeyboardEvent) => {
-        // close mention results window if hit escape
-        if (evt.key == "Escape") {
-            this.clearMentionContainer();
-            return;
-        } 
-    
-        const sel: any = window.getSelection();
-        // if not input return
-        if (sel.anchorNode.nodeValue == null) {
-            this.clearMentionContainer();
-            return;
+      this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trimEnd();
+
+      const results: Person[] = [];
+      // filter
+      for (let i = 0; i < this.personList.length; i++) {
+        if (this.personList[i].displayName.toLowerCase().indexOf(this.mentionInput) > -1) {
+          results.push(this.personList[i]);
         }
+      }
 
-        // if the last character is '@', load the full participant list
-        if (sel.anchorNode.nodeValue[sel.focusOffset - 1] === '@') {
-            this.populateMentionContainer(this.personList);
-        } else {
-            // get the text from the start of the node up to the cursor focus
-            const inputToFocus = sel.anchorNode.nodeValue.substring(0, sel.focusOffset);
-            // get the last index of '@', there could be multiple @
-            const atIndex = inputToFocus.lastIndexOf("@") + 1;
-            if (atIndex == 0) {
-                this.clearMentionContainer();
-                return;
-            }
-
-            this.mentionInput = inputToFocus.substring(atIndex, sel.focusOffset).toLowerCase().trimEnd();
-            
-            const results: Person[] = [];
-            // filter
-            for (let i = 0; i < this.personList.length; i++) {
-                if (this.personList[i].displayName.toLowerCase().indexOf(this.mentionInput) > -1) {
-                    results.push(this.personList[i]);
-                }
-            }
-
-            if (results.length == 0) {
-                this.clearMentionContainer();
-                return;
-            }
-            this.populateMentionContainer(results);
-        }
+      if (results.length == 0) {
+        this.clearMentionContainer();
+        return;
+      }
+      this.populateMentionContainer(results);
     }
+  };
 
-    sendMessage = async () => {
-        const replaceEmptyDiv = "<div><br></div>";
-        const input = (<HTMLElement>document.querySelector(".teams-embed-footer-input"))
-        if (input.textContent?.trim() === '') return;
-        const person: Person = {
-            id: "asdf",
-            userPrincipalName: "asdf",
-            displayName: "asdf",
-            photo: "asdf"
-        }
-        const message: Message = {
-            message: input.innerHTML.replace(replaceEmptyDiv, ""),
-            sender: person,
-            id: "asdf",
-            threadId: "asdf",
-            version: "asdf",
-            type: "asdf",
-            createdOn: new Date()
-        };
-
-        // call graph to get matches
-        const results = await GraphUtil.sendChatMessage(this.authInfo.accessToken, this.entityState.chatInfo.threadId, input.innerHTML);
-        input.innerHTML = "";
-    }
-
-    render = () => {
-        // get the template
-        const dom = <HTMLElement>template.content.cloneNode(true);
-    
-        // set chat title
-        (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
-    
-        // Concatenating owner and participants to create a list of all participants
-        this.personList = this.entityState.participants.concat(this.entityState.owner);// getPartipicipants("");
-
-        // set participant count in header
-        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML = this.personList.length.toString();
-    
-        // add the participants list
-        this.participantList = createParticipantList(this.personList, () => {
-            if (this.participantList)
-                this.participantList.hide();
-            this.dialog.show(true);
-        });
-        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.participantList);
-
-        // add the add participant dialog
-        (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.dialog);
-
-        // wire even to toggle participant list
-        (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
-            if (this.participantList)
-                this.participantList.toggle();
-        });
-
-        // wire event to sent message
-        (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
-            this.sendMessage();
-        });
-        
-        // wire event to send message on ENTER
-        (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
-            if (e.key == "Enter" && !e.shiftKey) {
-                e.stopPropagation();
-                e.preventDefault();
-                const input = <HTMLElement>document.querySelector(".teams-embed-footer-input");
-                // the Enter button was pressed
-                // remove the last node which is an empty line break
-                input.lastChild?.remove();
-                this.sendMessage();
-                return;
-            }
-
-            // handle at mention
-            this.createAtMention(e);
-        });
-
-        this.appendChild(dom);
+  sendMessage = async () => {
+    const replaceEmptyDiv = "<div><br></div>";
+    const input = <HTMLElement>document.querySelector(".teams-embed-footer-input");
+    if (input.textContent?.trim() === "") return;
+    const person: Person = {
+      id: "asdf",
+      userPrincipalName: "asdf",
+      displayName: "asdf",
+      photo: "asdf",
     };
+    // const message: Message = {
+    //   message: input.innerHTML.replace(replaceEmptyDiv, ""),
+    //   sender: person,
+    //   id: "asdf",
+    //   threadId: "asdf",
+    //   version: "asdf",
+    //   type: "asdf",
+    //   createdOn: new Date(),
+    // };
+
+    // call graph to get matches
+    const results = await GraphUtil.sendChatMessage(
+      this.authInfo.accessToken,
+      this.entityState.chatInfo.threadId,
+      input.innerHTML,
+    );
+    if (!results) {
+      console.error("Failed to send Chat Message");
+    }
+    input.innerHTML = "";
+  };
+
+  render = () => {
+    // get the template
+    const dom = <HTMLElement>template.content.cloneNode(true);
+
+    // set chat title
+    (<HTMLElement>dom.querySelector(".teams-embed-header-text")).innerHTML = `<h2>${this.chatTitle}</h2>`;
+
+    // Concatenating owner and participants to create a list of all participants
+    this.personList = this.entityState.participants.concat(this.entityState.owner); // getPartipicipants("");
+
+    // set participant count in header
+    (<HTMLElement>dom.querySelector(".teams-embed-header-participants-count")).innerHTML =
+      this.personList.length.toString();
+
+    // add the participants list
+    this.participantList = createParticipantList(this.personList, () => {
+      if (this.participantList) this.participantList.hide();
+      this.dialog.show(true);
+    });
+    (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.participantList);
+
+    // add the add participant dialog
+    (<HTMLElement>dom.querySelector(".teams-embed-container")).appendChild(this.dialog);
+
+    // wire even to toggle participant list
+    (<HTMLElement>dom.querySelector(".teams-embed-header-participants-button")).addEventListener("click", () => {
+      if (this.participantList) this.participantList.toggle();
+    });
+
+    // wire event to sent message
+    (<HTMLElement>dom.querySelector(".teams-embed-footer-send-message-button")).addEventListener("click", () => {
+      this.sendMessage();
+    });
+
+    // wire event to send message on ENTER
+    (<HTMLElement>dom.querySelector(".teams-embed-footer-input")).addEventListener("keyup", (e) => {
+      if (e.key == "Enter" && !e.shiftKey) {
+        e.stopPropagation();
+        e.preventDefault();
+        const input = <HTMLElement>document.querySelector(".teams-embed-footer-input");
+        // the Enter button was pressed
+        // remove the last node which is an empty line break
+        input.lastChild?.remove();
+        this.sendMessage();
+        return;
+      }
+
+      // handle at mention
+      this.createAtMention(e);
+    });
+
+    this.appendChild(dom);
+
+    this.messages.map(async (message) => {
+      await this.renderMessage(message);
+    });
+  };
 }
 
 function createParticipantList(participantList: Person[], callback: any) {
@@ -267,41 +277,6 @@ function createParticipantList(participantList: Person[], callback: any) {
 
   const pList = new ParticipantList(participantList, callback);
   return pList;
-}
-
-function getPartipicipants(entityId: string) {
-  const personList = [];
-
-  const person1: Person = {
-    id: "1",
-    displayName: "Emily Braun",
-    userPrincipalName: "a@b.c",
-    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
-  };
-  const person2: Person = {
-    id: "2",
-    displayName: "Isaiah Langer",
-    userPrincipalName: "b@b.c",
-    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
-  };
-  const person3: Person = {
-    id: "3",
-    displayName: "Enrico Cattaneo",
-    userPrincipalName: "c@b.c",
-    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
-  };
-  const person4: Person = {
-    id: "4",
-    displayName: "Patti Fernandez",
-    userPrincipalName: "d@b.c",
-    photo: "https://www.ugx-mods.com/forum/Themes/UGX-Mods/images/default-avatar.png",
-  };
-  personList.push(person1);
-  personList.push(person2);
-  personList.push(person3);
-  personList.push(person4);
-
-  return personList;
 }
 
 customElements.define("app-container", AppContainer);

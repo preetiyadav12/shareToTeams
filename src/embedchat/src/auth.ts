@@ -2,6 +2,7 @@ import * as msal from "@azure/msal-browser";
 
 export class Auth {
   private msalConfig: msal.Configuration;
+  private resource: string;
   private hostUri: string;
   private clientId: string;
   private tenant: string;
@@ -11,6 +12,12 @@ export class Auth {
     if (window.location.search.length > 0) {
       // get configuration from url parameters and save in session for authorization reply
       const params = window.location.search.split("&");
+
+      // resource
+      const resourceParam = params.find((i) => i.indexOf("resource") != -1);
+      this.resource = resourceParam && resourceParam.split("=").length == 2 ? resourceParam.split("=")[1] : "";
+      this.resource = decodeURIComponent(this.resource);
+      sessionStorage.setItem("resource", this.resource);
 
       // hostUri
       const hostUriParam = params.find((i) => i.indexOf("host_uri") != -1);
@@ -28,6 +35,7 @@ export class Auth {
       sessionStorage.setItem("tenant", this.tenant);
     } else {
       // get configuration from session state
+      this.resource = sessionStorage.getItem("resource") as string; 
       this.hostUri = sessionStorage.getItem("hostUri") as string;
       this.clientId = sessionStorage.getItem("clientId") as string;
       this.tenant = sessionStorage.getItem("tenant") as string;
@@ -55,20 +63,33 @@ export class Auth {
 
     // if the user is signed in, acquire the token
     if (accounts.length != 0) {
-      const resp = await msalInstance.acquireTokenSilent({
-        scopes: ["https://graph.microsoft.com/.default"],
-        account: accounts[0],
-      });
-      if (resp.accessToken) {
-        // return the token based on mode
-        if (window.location.href.indexOf("?mode=interactive") === -1) {
-          console.log("Returning token from silent auth");
-          parent.postMessage(resp, "*");
+      try {
+        const resp = await msalInstance.acquireTokenSilent({
+          scopes: [this.resource],
+          account: accounts[0],
+        });
+        if (resp.accessToken) {
+          // return the token based on mode
+          if (window.location.href.indexOf("?mode=interactive") === -1) {
+            console.log("Returning token from silent auth");
+            parent.postMessage(resp, "*");
+          } else {
+            console.log("Returning token from interactive auth");
+            window.opener.postMessage(resp, "*");
+          }
         } else {
-          console.log("Returning token from interactive auth");
-          window.opener.postMessage(resp, "*");
+          // return error based on how this was launched
+          if (window.location.href.indexOf("?mode=interactive") === -1) {
+            // this should never happen??? Maybe when tokens stale
+            console.log("Silent auth failed");
+            parent.postMessage(null, "*");
+          } else {
+            console.log("Interactive auth failed");
+            window.opener.postMessage(null, "*");
+          }
         }
-      } else {
+      }
+      catch (error) {
         // return error based on how this was launched
         if (window.location.href.indexOf("?mode=interactive") === -1) {
           // this should never happen??? Maybe when tokens stale
@@ -87,8 +108,9 @@ export class Auth {
       } else {
         console.log("This was an attempt at interative auth...start redirect");
         await msalInstance.acquireTokenRedirect({
-          scopes: ["https://graph.microsoft.com/.default"],
+          scopes: [this.resource],
           redirectStartPage: window.location.href,
+          //prompt: "consent" //This is for testing re-consent scenarios
         });
       }
     }
