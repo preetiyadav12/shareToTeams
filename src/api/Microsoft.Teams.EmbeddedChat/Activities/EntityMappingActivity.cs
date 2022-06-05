@@ -1,9 +1,8 @@
 ﻿using Azure.Communication.Identity;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Teams.EmbeddedChat.ACS;
+using Microsoft.Teams.EmbeddedChat.Helpers;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Utils;
 using Newtonsoft.Json;
@@ -12,198 +11,157 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.EmbeddedChat.Activities
+namespace Microsoft.Teams.EmbeddedChat.Activities;
+
+public static class EntityMappingActivity
 {
-    public class EntityMappingActivity
+    /// <summary>
+    /// The Activity to get the list of Entity States
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="log"></param>
+    /// <returns></returns>
+    public static IEnumerable<EntityState> GetEntityState(ChatInfoRequest requestData, ILogger logger, AppSettings appConfiguration)
     {
-        private readonly AppSettings _appConfiguration;
-        private readonly ILogger<EntityMappingActivity> _log;
+        var entityStates = new List<EntityState>();
 
-        public EntityMappingActivity(IOptions<AppSettings> configuration, ILogger<EntityMappingActivity> log)
+        logger.LogInformation($"Activity {nameof(GetEntityState)} has started.");
+
+        try
         {
-            _log = log;
-            _appConfiguration = configuration.Value;
-        }
+            // Construct a new "TableServiceClient using a connection string.
+            var tableService = new AzureDataTablesService<EntityStateRecord>(
+                appConfiguration.StorageConnectionString, appConfiguration.AzureTableName);
 
-        /// <summary>
-        /// The Activity to get the list of Entity States
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="log"></param>
-        /// <returns></returns>
-        [FunctionName(Constants.GetEntityStateActivity)]
-        public IEnumerable<EntityState> GetEntityStateAsync([ActivityTrigger] IDurableActivityContext context)
-        {
-            List<EntityState> entityStates = new List<EntityState>();
-
-            // retrieves the entity state from the orchestration
-            var requestData = context.GetInput<ChatInfoRequest>();
-
-            _log.LogInformation($"Activity {Constants.GetEntityStateActivity} has started.");
-
-            try
+            // return all the entities for the particular Entity Id
+            var entityRecords = (IEnumerable<EntityStateRecord>) tableService.GetEntities(requestData.EntityId);
+            foreach (var record in entityRecords)
             {
-                // Construct a new "TableServiceClient using a connection string.
-                var tableService = new AzureDataTablesService<EntityStateRecord>(_appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
-
-                // return all the entities for the particular Entity Id
-                var entityRecords = (IEnumerable<EntityStateRecord>) tableService.GetEntities(requestData.EntityId);
-                foreach (var record in entityRecords)
+                entityStates.Add(new EntityState
                 {
-                    entityStates.Add(new EntityState
-                    {
-                        Id = record.Id,
-                        EntityId = record.EntityId,
-                        IsSuccess = record.IsSuccess,
-                        Owner = Deserialize<Person>(record.Owner),
-                        Participants = DeserializeList<Person>(record.Participants).ToArray(),
-                        ChatInfo = Deserialize<ChatInfo>(record.ChatInfo),
-                        AcsInfo = Deserialize<ACSInfo>(record.AcsInfo),
-                        CorrelationId = record.CorrelationId
-                    });
-                }
+                    Id = record.Id,
+                    EntityId = record.EntityId,
+                    IsSuccess = record.IsSuccess,
+                    Owner = SerializationHelper.Deserialize<Person>(record.Owner),
+                    Participants = SerializationHelper.DeserializeList<Person>(record.Participants).ToArray(),
+                    ChatInfo = SerializationHelper.Deserialize<ChatInfo>(record.ChatInfo),
+                    AcsInfo = SerializationHelper.Deserialize<ACSInfo>(record.AcsInfo),
+                    CorrelationId = record.CorrelationId
+                });
+            }
 
-                return entityStates;
-            }
-            catch (System.Exception e)
-            {
-                _log.LogError(e.Message);
-                throw;
-            }
+            return entityStates;
         }
-
-        /// <summary>
-        /// The Activity to create a new entity state
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="log"></param>
-        /// <returns></returns>
-        [FunctionName(Constants.CreateEntityStateActivity)]
-        public async Task<bool> CreateEntityStateActivity([ActivityTrigger] IDurableActivityContext context)
+        catch (System.Exception e)
         {
-            _log.LogInformation($"Activity {Constants.CreateEntityStateActivity} has started.");
-
-            // retrieves the entity state from the orchestration
-            var entityState = context.GetInput<EntityState>();
-
-            if (entityState == null)
-            {
-                _log.LogError("Entity State cannot be null.");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(entityState.EntityId))
-            {
-                _log.LogError("Entity Id cannot be null!");
-                return false;
-            }
-
-            try
-            {
-                // Convert (serialize) the complex types into their JSON representation before writting into the storage
-                var entityRecord = new EntityStateRecord
-                {
-                    PartitionKey = entityState.EntityId,
-                    RowKey = entityState.Owner.Id,
-                    EntityId = entityState.EntityId,
-                    IsSuccess = entityState.IsSuccess,
-                    Owner = JsonConvert.SerializeObject(entityState.Owner),
-                    ChatInfo = JsonConvert.SerializeObject(entityState.ChatInfo),
-                    AcsInfo = JsonConvert.SerializeObject(entityState.AcsInfo),
-                    Participants = JsonConvert.SerializeObject(entityState.Participants),
-                    CorrelationId = entityState.CorrelationId
-                };
-
-                // Construct a new "TableServiceClient using a connection string.
-                var tableService = new AzureDataTablesService<EntityStateRecord>(
-                    _appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
-
-                // add a new Entity into the state
-                await tableService.AddEntityAsync(entityRecord);
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                _log.LogError(e.Message);
-                throw;
-            }
+            logger.LogError(e.Message);
+            throw;
         }
+    }
 
-        /// <summary>
-        /// Updates existing entity
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="log"></param>
-        /// <returns></returns>
-        [FunctionName(Constants.UpdateEntityStateActivity)]
-        public async Task<(bool updateStatus, EntityState updatedState)> UpdateEntityStateAsync([ActivityTrigger] IDurableActivityContext context)
+
+    /// <summary>
+    /// Updates existing entity
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="log"></param>
+    /// <returns></returns>
+    public static async Task<(bool updateStatus, EntityState updatedState)> UpdateEntityStateAsync(
+        EntityState entityState, AppSettings appConfiguration, ILogger logger)
+    {
+        logger.LogInformation($"Activity {nameof(UpdateEntityStateAsync)} has started.");
+
+        try
         {
-            _log.LogInformation($"Activity {Constants.UpdateEntityStateActivity} has started.");
+            // Construct a new "TableServiceClient using a connection string.
+            var tableService = new AzureDataTablesService<EntityStateRecord>(
+                appConfiguration.StorageConnectionString, appConfiguration.AzureTableName);
 
-            // retrieves the entity from the orchestration
-            var entityState = context.GetInput<EntityState>();
-
-            try
+            if (entityState.AcsInfo.AcsToken == null)
             {
-                // Construct a new "TableServiceClient using a connection string.
-                var tableService = new AzureDataTablesService<EntityStateRecord>(
-                    _appConfiguration.StorageConnectionString, _appConfiguration.AzureTableName);
+                // create ACS Communication Identity Client Service
+                var comClient = new CommServices(appConfiguration.AcsConnectionString,
+                    new[] { CommunicationTokenScope.Chat });
 
-                if (entityState.AcsInfo.AcsToken == null)
-                {
-                    // create ACS Communication Identity Client Service
-                    var comClient = new CommServices(_appConfiguration.AcsConnectionString,
-                        new[] { CommunicationTokenScope.Chat });
-
-                    // Refresh ACS Token and update the state
-                    var accessToken = await comClient.RefreshAccessToken(entityState.AcsInfo.AcsUserId);
-                    entityState.AcsInfo.AcsToken = accessToken.Token;
-                    entityState.AcsInfo.TokenExpiresOn = accessToken.ExpiresOn.ToString("F");
-                }
-
-                // Convert (serialize) the complex types into their JSON representation before writting into the storage
-                var entityRecord = new EntityStateRecord
-                {
-                    PartitionKey = entityState.EntityId,
-                    RowKey = entityState.Owner.Id,
-                    EntityId = entityState.EntityId,
-                    IsSuccess = entityState.IsSuccess,
-                    Owner = JsonConvert.SerializeObject(entityState.Owner),
-                    ChatInfo = JsonConvert.SerializeObject(entityState.ChatInfo),
-                    AcsInfo = JsonConvert.SerializeObject(entityState.AcsInfo),
-                    Participants = JsonConvert.SerializeObject(entityState.Participants),
-                    CorrelationId = entityState.CorrelationId
-                };
-
-                // update the existing entity state with the updated data
-                await tableService.UpdateEntityAsync(entityRecord);
-
-                return (true, entityState);
+                // Refresh ACS Token and update the state
+                var accessToken = await comClient.RefreshAccessToken(entityState.AcsInfo.AcsUserId);
+                entityState.AcsInfo.AcsToken = accessToken.Token;
+                entityState.AcsInfo.TokenExpiresOn = accessToken.ExpiresOn.ToString("F");
             }
-            catch (Exception e)
+
+            // Convert (serialize) the complex types into their JSON representation before writting into the storage
+            var entityRecord = new EntityStateRecord
             {
-                _log.LogError(e.Message);
-                return (false, entityState);
-            }
+                PartitionKey = entityState.EntityId,
+                RowKey = entityState.Owner.Id,
+                EntityId = entityState.EntityId,
+                IsSuccess = (bool)entityState.IsSuccess,
+                Owner = JsonConvert.SerializeObject(entityState.Owner),
+                ChatInfo = JsonConvert.SerializeObject(entityState.ChatInfo),
+                AcsInfo = JsonConvert.SerializeObject(entityState.AcsInfo),
+                Participants = JsonConvert.SerializeObject(entityState.Participants),
+                CorrelationId = entityState.CorrelationId
+            };
+
+            // update the existing entity state with the updated data
+            await tableService.UpdateEntityAsync(entityRecord);
+
+            return (true, entityState);
         }
-
-
-        private T Deserialize<T>(string json) where T : new()
+        catch (Exception e)
         {
-            if (string.IsNullOrEmpty(json))
-                return new T();
-
-            return JsonConvert.DeserializeObject<T>(json);
+            logger.LogError(e.Message);
+            return (false, entityState);
         }
+    }
 
-        private IEnumerable<T> DeserializeList<T>(string json) where T : new()
+
+    /// <summary>
+    /// The Activity to create a new Entity State
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="log"></param>
+    /// <returns></returns>
+    public static async Task<EntityStateRecord> CreateEntityStateAsync(
+        EntityState entityState, ILogger logger, AppSettings appConfiguration)
+    {
+        logger.LogInformation($"Activity {nameof(CreateEntityStateAsync)} has started.");
+
+        if (string.IsNullOrEmpty(entityState.EntityId))
         {
-            if (string.IsNullOrEmpty(json))
-                return new List<T>();
-
-            return JsonConvert.DeserializeObject<List<T>>(json);
+            logger.LogError("Entity Id cannot be null!");
+            return null;
         }
 
+        try
+        {
+            // Convert (serialize) the complex types into their JSON representation before writting into the storage
+            var entityRecord = new EntityStateRecord
+            {
+                PartitionKey = entityState.EntityId,
+                RowKey = entityState.Owner.Id,
+                EntityId = entityState.EntityId,
+                IsSuccess = (bool)entityState.IsSuccess,
+                Owner = JsonConvert.SerializeObject(entityState.Owner),
+                ChatInfo = JsonConvert.SerializeObject(entityState.ChatInfo),
+                AcsInfo = JsonConvert.SerializeObject(entityState.AcsInfo),
+                Participants = JsonConvert.SerializeObject(entityState.Participants),
+                CorrelationId = entityState.CorrelationId
+            };
+
+            // Construct a new "TableServiceClient using a connection string.
+            var tableService = new AzureDataTablesService<EntityStateRecord>(
+                appConfiguration.StorageConnectionString, appConfiguration.AzureTableName);
+
+            // add a new Entity into the state
+            await tableService.AddEntityAsync(entityRecord);
+
+            return entityRecord;
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e.Message);
+            throw;
+        }
     }
 }

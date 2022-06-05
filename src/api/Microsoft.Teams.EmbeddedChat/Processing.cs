@@ -1,92 +1,177 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+﻿using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Teams.EmbeddedChat.Activities;
 using Microsoft.Teams.EmbeddedChat.Models;
+using Microsoft.Teams.EmbeddedChat.Services;
 using System;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Microsoft.Teams.EmbeddedChat
 {
-    public class Processing
+    public class Processing : IProcessing
     {
+        private readonly IGraphService _graphService;
         private readonly ILogger<Processing> _log;
-        
-        public readonly AppSettings AppConfiguration;
+        private readonly AppSettings _appConfiguration;
 
-        public Processing(ILoggerFactory loggerFactory, IOptions<AppSettings> configuration)
+        public Processing(IGraphService graphService, ILoggerFactory loggerFactory, IOptions<AppSettings> configuration)
         {
+            _graphService = graphService;
             _log = loggerFactory.CreateLogger<Processing>();
-            AppConfiguration = configuration.Value;
+            _appConfiguration = configuration.Value;
         }
 
-        public async Task<IActionResult> ProcessFlow(
-            ApiOperation operation,
-            ChatInfoRequest requestData,
-            HttpRequest request,
-            IDurableOrchestrationClient client)
-        {
-            _log.LogInformation($"Started orchestration Instance Id: '{requestData.Id}' for the Api Operation Id: {operation} and Entity ID: '{requestData.EntityId}'.");
 
-            // Construct the orchestration request data
-            var orchestrationRequest = new OrchestrationRequest { 
-                Operation = operation, 
-                Request = requestData,
-                AccessToken = ExtractJWToken(request.Headers.Authorization[0]) // extract access token from the header
+        /// <summary>
+        /// Get Entity State
+        /// </summary>
+        /// <param name="requestData"></param>
+        /// <param name="request"></param>
+        /// <param name="durableContext"></param>
+        /// <returns></returns>
+        public async Task<HttpResponseData> GetEntity(
+            ChatInfoRequest requestData,
+            HttpRequestData request,
+            DurableClientContext durableContext)
+        {
+            _log.LogInformation($"Started function {nameof(GetEntity)} for the Entity ID: '{requestData.EntityId}'.");
+
+            // Check if the mapping exists for this entity Id by invoking a separate Activity Function.
+            var entities = EntityMappingActivity.GetEntityState(requestData, _log, _appConfiguration);
+
+            if (entities.Any())
+            {
+                // for each entity get the participant list and update state
+                // 1. foreach entity begin
+                // 2.  call getParticipantsActivity passing entity's chatInfo
+                // 3. getParticipantsActivity returns the updated list of participants
+                // 4. assign the new participants list to the entity's participants property
+                // 5. call UpdateEntityStateActivity passing the current entity (with updated participants list)
+                // 6. end foreach loop
+                foreach (var entity in entities)
+                {
+                    var meetingRequest = new MeetingRequest
+                    {
+                        ChatInfo = entity.ChatInfo,
+                        MeetingOwnerId = requestData.Owner.Id,
+                        AccessToken = ExtractJWToken(request.Headers.GetValues("Authorization").First()) // extract access token from the header
+                    };
+
+                    // Get the updated list of all chat participants
+                    var participants = await ParticipantsActivity.GetParticipantsAsync(meetingRequest, _graphService, _log);
+
+                    if (participants.Any(p => p.Id == requestData.Owner.Id) || entity.Owner.Id == requestData.Owner.Id)
+                    {
+                        if (!ParticipantsActivity.ParticipantsEqual(entity.Participants, participants))
+                        {
+                            // the new list of participants is different from the source
+                            // then, we'll update the entity state
+                            entity.Participants = participants;
+
+                            // If the ACS Token has expired, we'll refresh it and then update the state
+                            if (DateTime.Parse(entity.AcsInfo.TokenExpiresOn).CompareTo(DateTime.UtcNow) < 0)
+                            {
+                                _log.LogWarning("ACS Token has expired. Refreshing the token and returning the updated state...");
+                                // invalidate the current expired token
+                                entity.AcsInfo.AcsToken = null;
+                            }
+
+                            var (updateStatus, updatedState) =
+                                await EntityMappingActivity.UpdateEntityStateAsync(entity, _appConfiguration, _log);
+                            if (updateStatus == false)
+                            {
+                                var msg = $"Failed to update the entity with Id: {requestData.EntityId}";
+                                _log.LogError(msg);
+                                return HttpResponses.CreateFailedResponse(request, msg);
+                            }
+
+                            // Mark the updated state as successful
+                            updatedState.IsSuccess = true;
+
+                            return await HttpResponses.CreateOkResponseAsync(request, updatedState);
+                        }
+
+                        return await HttpResponses.CreateOkResponseAsync(request, entity);
+                    }
+                }
+
+                // None of the entities contain this user as the participant
+                // We're going to denied this user's accessing this entity
+                var ownerNames = entities.Select(e => e.Owner.UserPrincipalName).ToArray();
+                var owners = new Person
+                {
+                    UserPrincipalName = String.Join(",", ownerNames)
+                };
+
+                return await HttpResponses.CreateOkResponseAsync(request, new EntityState
+                {
+                    EntityId = requestData.EntityId,
+                    IsSuccess = false,
+                    Owner = owners,
+                    CorrelationId = requestData.CorrelationId
+                });
+            }
+
+            return HttpResponses.CreateNotFoundResponse(
+                request, $"No Entity mapping found for the requested Entity Id: {requestData.EntityId}");
+        }
+
+
+
+        /// <summary>
+        /// Create a new entity state
+        /// </summary>
+        /// <param name="requestData"></param>
+        /// <param name="request"></param>
+        /// <param name="durableContext"></param>
+        /// <returns></returns>
+        public async Task<HttpResponseData> CreateEntity(
+            ChatInfoRequest requestData,
+            HttpRequestData request,
+            DurableClientContext durableContext)
+        {
+            _log.LogInformation($"Started function {nameof(CreateEntity)} for the Entity ID: '{requestData.EntityId}'.");
+
+            // 1. Create a new Online Meeting and get the Thread Id
+            var chatInfo = await ChatInfoActivity.CreateOnlineMeetingAsync(requestData, _graphService, _log);
+
+            // 2. create a new ACS Client and fill the info to the entity state
+            var acsInfo = await AcsClientActivity.CreateACSClientAsync(_appConfiguration, _log);
+
+            // 3. Create a new Entity State
+            var newState = new EntityState
+            {
+                EntityId = requestData.EntityId,
+                Owner = requestData.Owner,
+                ChatInfo = chatInfo,
+                AcsInfo = acsInfo,
+                Participants = requestData.Participants,
+                CorrelationId = requestData.CorrelationId,
+                IsSuccess = true
             };
 
-            // Start new orchestration for the requested flow
-            requestData.Id = await client.StartNewAsync(Constants.Orchestration, orchestrationRequest);
-
-            TimeSpan timeout = TimeSpan.FromSeconds(Constants.Timeout);
-            TimeSpan retryInterval = TimeSpan.FromSeconds(Constants.RetryInterval);
-
-            // Execute the orchestration and wait for the completion
-            await client.WaitForCompletionOrCreateCheckStatusResponseAsync(
-                request,
-                requestData.Id,
-                timeout,
-                retryInterval,
-                true);
-
-            // Retrieve the status of the completed orchestration
-            var data = await client.GetStatusAsync(requestData.Id);
-
-            // timeout
-            if (data.RuntimeStatus != OrchestrationRuntimeStatus.Completed)
+            // Save the entity state to the durable storage
+            var entityRecord = await EntityMappingActivity.CreateEntityStateAsync(newState, _log, _appConfiguration);
+            if (entityRecord == null)
             {
-                await client.TerminateAsync(requestData.Id, "Timeout. Something took too long");
-                return new ContentResult()
-                {
-                    Content = "{ error: \"Timeout. Something took too long\" }",
-                    ContentType = "application/json",
-                    StatusCode = (int)HttpStatusCode.InternalServerError
-                };
-            }
-            var completeResponseData = data.Output.ToObject<EntityState>();
-
-            if (completeResponseData == null)
-                return new NotFoundResult();
-
-            if (!completeResponseData.IsSuccess)
-            {
-                var content = new ContentResult
-                {
-                    Content = completeResponseData.Owner.UserPrincipalName,
-                    ContentType = "application/json",
-                    StatusCode = (int)HttpStatusCode.InternalServerError
-                };
-                return new OkObjectResult(content);
+                var msg = $"{nameof(EntityMappingActivity.CreateEntityStateAsync)} Activity failed to create a new Entity State for the entity id {requestData.EntityId}.";
+                _log.LogError(msg);
+                return HttpResponses.CreateFailedResponse(request, msg);
             }
 
-            return new OkObjectResult(completeResponseData);
+            return await HttpResponses.CreateOkResponseAsync(request, newState);
         }
 
 
+
+        /// <summary>
+        /// Extracts JWToken from the Bearer Authentication token
+        /// </summary>
+        /// <param name="authorization"></param>
+        /// <returns></returns>
         private static string ExtractJWToken(string authorization)
         {
             return authorization.StartsWith("Bearer") ? authorization.Split(" ").Last() :
