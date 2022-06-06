@@ -1,9 +1,11 @@
-﻿using Microsoft.Azure.Functions.Worker;
+﻿using Dynamitey;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Teams.EmbeddedChat.Authorization;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,6 +21,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
         private readonly JwtSecurityTokenHandler _tokenValidator;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
+        private readonly string _functionKey;
 
         public AuthenticationMiddleware(IConfiguration configuration)
         {
@@ -32,16 +35,41 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
             _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
                 $"{authority}/.well-known/openid-configuration",
                 new OpenIdConnectConfigurationRetriever());
+
+            _functionKey = configuration["FUNCTION_KEY"];
         }
 
         public async Task Invoke(
             FunctionContext context,
             FunctionExecutionDelegate next)
         {
+            var targetMethod = context.GetTargetFunctionMethod();
+
+            var methodAttributes = AuthorizationMiddleware.GetCustomAttributesOnClassAndMethod<AuthorizeAttribute>(targetMethod);
+
+            if (methodAttributes.Count == 0) // No authorization decorations
+            {
+                // Set principal + token in Features collection
+                // They can be accessed from here later in the call chain
+                context.Features.Set(new JwtPrincipalFeature(new System.Security.Claims.ClaimsPrincipal(), "", true));
+                await next(context);
+                return;
+            }
+
             if (!TryGetTokenFromHeaders(context, out var token))
             {
                 // Unable to get token from headers
                 context.SetHttpResponseStatusCode(HttpStatusCode.Unauthorized);
+                return;
+            }
+
+            // If the function key was provided instead of Authorization, then let it go.
+            if (token == this._functionKey)
+            {
+                // Set principal + token in Features collection
+                // They can be accessed from here later in the call chain
+                context.Features.Set(new JwtPrincipalFeature(new System.Security.Claims.ClaimsPrincipal(), "", true));
+                await next(context);
                 return;
             }
 
@@ -66,7 +94,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
 
                 // Set principal + token in Features collection
                 // They can be accessed from here later in the call chain
-                context.Features.Set(new JwtPrincipalFeature(principal, token));
+                context.Features.Set(new JwtPrincipalFeature(principal, token, principal.Identity.IsAuthenticated));
 
                 await next(context);
             }
@@ -78,7 +106,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
             }
         }
 
-        private static bool TryGetTokenFromHeaders(FunctionContext context, out string token)
+        private bool TryGetTokenFromHeaders(FunctionContext context, out string token)
         {
             token = null;
             // HTTP headers are in the binding context as a JSON object
@@ -99,6 +127,13 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
             if (!normalizedKeyHeaders.TryGetValue("authorization", out var authHeaderValue))
             {
                 // No Authorization header present
+                // Will now check if X-Functions-Key was present
+                if (normalizedKeyHeaders.TryGetValue("x-functions-key", out var funcHeaderValue))
+                {
+                    token = this._functionKey;
+                    return true;
+                }
+
                 return false;
             }
 

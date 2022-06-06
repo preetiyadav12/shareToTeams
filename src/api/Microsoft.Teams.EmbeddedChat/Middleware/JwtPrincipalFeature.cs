@@ -9,10 +9,11 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
     /// </summary>
     public class JwtPrincipalFeature
     {
-        public JwtPrincipalFeature(ClaimsPrincipal principal, string accessToken)
+        public JwtPrincipalFeature(ClaimsPrincipal principal, string accessToken, bool isAuthenticated)
         {
             Principal = principal;
             AccessToken = accessToken;
+            IsAuthenticated = isAuthenticated;
         }
 
         public ClaimsPrincipal Principal { get; }
@@ -23,5 +24,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
         /// access tokens with the on-behalf-of flow.
         /// </summary>
         public string AccessToken { get; }
+
+        public bool IsAuthenticated { get; }
     }
 }

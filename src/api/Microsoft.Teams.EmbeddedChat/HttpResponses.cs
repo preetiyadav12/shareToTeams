@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Teams.EmbeddedChat.Models;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Microsoft.Teams.EmbeddedChat
@@ -19,11 +20,10 @@ namespace Microsoft.Teams.EmbeddedChat
 
         public static async Task<HttpResponseData> CreateOkResponseAsync(
             HttpRequestData request,
-            BaseModel content)
+            EntityState content)
         {
             var response = request.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-            await response.WriteAsJsonAsync(content);
+            await response.WriteAsJsonAsync<EntityState>(content);
             return response;
         }
 

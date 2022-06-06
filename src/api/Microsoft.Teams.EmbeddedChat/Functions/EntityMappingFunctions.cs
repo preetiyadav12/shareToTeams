@@ -15,10 +15,10 @@ namespace Microsoft.Teams.EmbeddedChat.Functions;
 // If an Authorize attribute is placed at class-level,
 // requests to any function within the class
 // must pass the authorization checks
-[Authorize(
-    Scopes = new[] { Scopes.FunctionsAccess },
-    UserRoles = new[] { UserRoles.User, UserRoles.Admin },
-    AppRoles = new[] { AppRoles.AccessAllFunctions })]
+//[Authorize(
+//    Scopes = new[] { Scopes.FunctionsAccess },
+//    UserRoles = new[] { UserRoles.User, UserRoles.Admin },
+//    AppRoles = new[] { AppRoles.AccessAllFunctions })]
 public class EntityMappingFunctions
 {
     private readonly ILogger<EntityMappingFunctions> _logger;
@@ -45,21 +45,29 @@ public class EntityMappingFunctions
         [DurableClient] DurableClientContext durableContext,
         FunctionContext executionContext)
     {
-        // ILogger logger = executionContext.GetLogger(nameof(GetEntityMapping));
-
-        var requestData = await req.ReadFromJsonAsync<ChatInfoRequest>();
-
-        if (requestData == null)
+        try
         {
-            var msg = $"Must provide the input body of {nameof(ChatInfoRequest)} type";
-            _logger.LogError(msg);
-            return HttpResponses.CreateFailedResponse(req, msg);
+            var requestData = await req.ReadFromJsonAsync<ChatInfoRequest>();
+
+            if (requestData == null)
+            {
+                var msg = $"Must provide the input body of {nameof(ChatInfoRequest)} type";
+                _logger.LogError(msg);
+                return HttpResponses.CreateFailedResponse(req, msg);
+            }
+
+            _logger.LogInformation(
+                $"The Function {nameof(GetEntityMapping)} was triggered by {requestData?.Owner?.DisplayName}");
+
+            var response = await _process.GetEntity(requestData, req, durableContext);
+
+            return response;
         }
-
-        _logger.LogInformation(
-            $"The Function {nameof(GetEntityMapping)} was triggered by {requestData?.Owner?.DisplayName}");
-
-        return await _process.GetEntity(requestData, req, durableContext);
+        catch (System.Exception ex)
+        {
+            var errMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            return HttpResponses.CreateFailedResponse(req, errMsg);
+        }
     }
 
 
@@ -70,26 +78,35 @@ public class EntityMappingFunctions
     /// <param name="durableContext">The Durable Functions client binding context object that is used to start and manage orchestration instances.</param>
     /// <param name="executionContext">The Azure Functions execution context, which is available to all function types.</param>
     /// <returns>Returns an HTTP response with more information about the started orchestration instance.</returns>
-    [Authorize(
-        Scopes = new[] { Scopes.FunctionsAccess })]
+    //[Authorize(
+    //    Scopes = new[] { Scopes.FunctionsAccess })]
     [Function(nameof(CreateEntityMapping))]
     public async Task<HttpResponseData> CreateEntityMapping(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = HttpRoutes.CreateEntityStateRoute)] HttpRequestData req,
         [DurableClient] DurableClientContext durableContext,
         FunctionContext executionContext)
     {
-        var requestData = await req.ReadFromJsonAsync<ChatInfoRequest>();
-
-        if (requestData == null)
+        try
         {
-            var msg = $"Must provide the input body of {nameof(ChatInfoRequest)} type";
-            _logger.LogError(msg);
-            return HttpResponses.CreateFailedResponse(req, msg);
+            var requestData = await req.ReadFromJsonAsync<ChatInfoRequest>();
+
+            if (requestData == null)
+            {
+                var msg = $"Must provide the input body of {nameof(ChatInfoRequest)} type";
+                _logger.LogError(msg);
+                return HttpResponses.CreateFailedResponse(req, msg);
+            }
+
+            _logger.LogInformation(
+                $"The Function {nameof(CreateEntityMapping)} was triggered by {requestData?.Owner?.DisplayName}");
+
+            var response = await _process.CreateEntity(requestData, req, durableContext);
+            return response;
         }
-
-        _logger.LogInformation(
-            $"The Function {nameof(CreateEntityMapping)} was triggered by {requestData?.Owner?.DisplayName}");
-
-        return await _process.CreateEntity(requestData, req, durableContext);
+        catch (System.Exception ex)
+        {
+            var errMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            return HttpResponses.CreateFailedResponse(req, errMsg);
+        }
     }
 }

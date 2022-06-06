@@ -20,6 +20,19 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
             FunctionExecutionDelegate next)
         {
             var principalFeature = context.Features.Get<JwtPrincipalFeature>();
+            if (principalFeature == null)
+            {
+                context.SetHttpResponseStatusCode(HttpStatusCode.Forbidden);
+                return;
+            }
+
+            // If the Function Key was provided in place of Auth token, let it pass
+            if (string.IsNullOrEmpty(principalFeature.AccessToken) && principalFeature.IsAuthenticated)
+            {
+                await next(context);
+                return;
+            } 
+
             if (!AuthorizePrincipal(context, principalFeature.Principal))
             {
                 context.SetHttpResponseStatusCode(HttpStatusCode.Forbidden);
@@ -125,7 +138,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
                 .ToList();
         }
 
-        private static List<T> GetCustomAttributesOnClassAndMethod<T>(MethodInfo targetMethod)
+        public static List<T> GetCustomAttributesOnClassAndMethod<T>(MethodInfo targetMethod)
             where T : Attribute
         {
             var methodAttributes = targetMethod.GetCustomAttributes<T>();

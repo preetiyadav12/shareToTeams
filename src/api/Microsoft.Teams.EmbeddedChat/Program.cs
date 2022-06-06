@@ -31,13 +31,17 @@ class Program
             //</docsnippet_configure_defaults>
             .ConfigureAppConfiguration(configure =>
             {
-                configure.AddJsonFile("appsettings.json");
+                configure.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                configure.AddJsonFile($"appsettings.{Environments.Development}.json", optional: true, reloadOnChange: true);
             })
             //<docsnippet_dependency_injection>
-            .ConfigureServices(services =>
+            .ConfigureServices((host, services) =>
             {
-                services.AddOptions<AppSettings>().BindConfiguration("AppSettings");
                 services.AddLogging();
+
+                IConfiguration configuration = host.Configuration;
+                AppSettings settings = configuration.GetSection("AppSettings").Get<AppSettings>();
+                services.AddSingleton(settings);
                 services.AddSingleton<IGraphService, GraphService>();
                 services.AddSingleton<IProcessing, Processing>();
             })
