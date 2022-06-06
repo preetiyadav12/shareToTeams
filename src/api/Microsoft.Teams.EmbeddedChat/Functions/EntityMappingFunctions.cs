@@ -78,8 +78,8 @@ public class EntityMappingFunctions
     /// <param name="durableContext">The Durable Functions client binding context object that is used to start and manage orchestration instances.</param>
     /// <param name="executionContext">The Azure Functions execution context, which is available to all function types.</param>
     /// <returns>Returns an HTTP response with more information about the started orchestration instance.</returns>
-    //[Authorize(
-    //    Scopes = new[] { Scopes.FunctionsAccess })]
+    [Authorize(
+        Scopes = new[] { Scopes.FunctionsAccess })]
     [Function(nameof(CreateEntityMapping))]
     public async Task<HttpResponseData> CreateEntityMapping(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = HttpRoutes.CreateEntityStateRoute)] HttpRequestData req,
