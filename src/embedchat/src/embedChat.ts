@@ -154,6 +154,13 @@ export class EmbeddedChat {
 
     // establish the call
     const callClient = new CallClient({});
+    const deviceManager = await callClient.getDeviceManager();
+    //Prompt a user to grant camera and/or microphone permissions, more info can be found 
+    //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
+    const result = await deviceManager.askDevicePermission({audio: false, video: false});
+    //This resolves with an object that indicates whether audio and video permissions were granted
+    console.log(result.audio);
+    console.log(result.video);
     const callAgent = await callClient.createCallAgent(this.creds, { displayName: "My 3rd Party App" });
     const locator = { meetingLink: entityState.chatInfo.joinUrl };
     const meetingCall = callAgent.join(locator);
