@@ -15,6 +15,7 @@ import { Person } from "./models/person";
 import { AppContainer } from "./components/appContainer";
 import { Message } from "./models/message";
 import { GraphUtil } from "./api/graphUtil";
+import { ErrorDescriptorDialogue } from "./components/errorDescriptorDialogue";
 
 export class EmbeddedChat {
   private readonly appSettings: AppSettings;
@@ -26,10 +27,12 @@ export class EmbeddedChat {
   private topHistoryMessages = 50;
   private graphAuthResult?: AuthInfo;
   private appAuthResult?: AuthInfo;
+  private errorDialogue: ErrorDescriptorDialogue;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
     this.waiting = new Waiting();
+    this.errorDialogue = new ErrorDescriptorDialogue();
 
     // add link to css
     // TODO: we might need to check if it already exists for SPAs
@@ -51,7 +54,7 @@ export class EmbeddedChat {
     this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
 
     console.log(`HTML Element: ${element.id}`);
-    console.log(`Entity Id: ${embedChatConfig.entityId}`);
+    console.log(`Entity Id: ${entityId}`);
 
     // add waiting indicator to UI and display it while we authenticate and check for mapping
     element.appendChild(this.waiting);
@@ -60,15 +63,24 @@ export class EmbeddedChat {
     // get graph token and then application token
     this.graphAuthResult = await AuthUtil.acquireToken(element, AuthUtil.graphDefaultScope, this.appSettings, this.waiting);
     console.log(this.graphAuthResult);
+
     if (!this.graphAuthResult) {
-      console.log("graphAuthResult cannot be null!");
+      const msg = "graphAuthResult cannot be null!";
+      console.log(msg);
+      element.prepend(this.errorDialogue);
+      this.errorDialogue.printError(msg);
+      this.waiting.hide();
       return;
     }
 
     this.appAuthResult = await AuthUtil.acquireToken(element, `api://${this.appSettings.clientId}/access_as_user`, this.appSettings, this.waiting);
     console.log(this.appAuthResult);
     if (!this.appAuthResult) {
-      console.log("appAuthResult cannot be null!");
+      const msg = "appAuthResult cannot be null!";
+      console.log(msg);
+      element.prepend(this.errorDialogue);
+      this.errorDialogue.printError(msg);
+      this.waiting.hide();
       return;
     }
 
@@ -92,48 +104,59 @@ export class EmbeddedChat {
     };
 
     // try to get the mapping for this entity id
-    const entityState: EntityState = (await entityApi.getMapping(chatRequest))!;
-    if (entityState && !entityState.isSuccess) {
-      alert(
-        `There is at least one other chat for this entity is in progress. Please contact one of the owners of the existing chats: ${entityState.owner}`,
-      );
-      return;
-    }
-    if (!entityState) {
-      // No mapping exists for entityId. Check for autoStart or prompt
-      // TODO: check autoStart value
+    //catch exception thrown by getMapping api and display on UI
+    try {
+      const entityState: EntityState = (await entityApi.getMapping(chatRequest))!;
+      if (entityState && !entityState.isSuccess) {
+        const msg = `There is at least one other chat for this entity is in progress. Please contact one of the owners of the existing chats: ${entityState.owner}`;
+        alert(msg);
+        element.prepend(this.errorDialogue);
+        this.errorDialogue.printError(msg);
+        return;
+      }
+      if (!entityState) {
+        // No mapping exists for entityId. Check for autoStart or prompt
+        // TODO: check autoStart value
+        this.waiting.hide();
+
+        const photoUtil: PhotoUtil = new PhotoUtil();
+        const dialog: AddParticipantDialog = new AddParticipantDialog(
+          this.graphAuthResult,
+          photoUtil,
+          async (participants: Person[]) => {
+            console.log(participants);
+            // Update the list of participants
+            chatRequest.participants = participants;
+            // Wait until the chat is created
+            this.waiting.show();
+
+            // Start the chat
+            const chatResponse = await entityApi.createChat(chatRequest);
+            if (!chatResponse) {
+              const msg = "Failed to initialize a new chat!";
+              element.prepend(this.errorDialogue);
+              this.errorDialogue.printError(msg);
+              this.waiting.hide();
+              return;
+            }
+
+            element.removeChild(btn);
+            await this.initializeChat(element, chatResponse, true);
+          },
+        );
+
+        const btn = new ButtonPage("Start Teams Chat", async () => {
+          dialog.show(false);
+        });
+        element.append(dialog);
+        element.append(btn);
+      } else {
+        await this.initializeChat(element, entityState, false);
+      }
+    } catch(err){
+      element.prepend(this.errorDialogue);
+      this.errorDialogue.printError("Error while retriving entityState");
       this.waiting.hide();
-
-      const photoUtil: PhotoUtil = new PhotoUtil();
-      const dialog: AddParticipantDialog = new AddParticipantDialog(
-        this.graphAuthResult,
-        photoUtil,
-        async (participants: Person[]) => {
-          console.log(participants);
-          // Update the list of participants
-          chatRequest.participants = participants;
-          // Wait until the chat is created
-          this.waiting.show();
-
-          // Start the chat
-          const chatResponse = await entityApi.createChat(chatRequest);
-          if (!chatResponse) {
-            alert("Failed to initialize a new chat!");
-            return;
-          }
-
-          element.removeChild(btn);
-          await this.initializeChat(element, chatResponse, true);
-        },
-      );
-
-      const btn = new ButtonPage("Start Teams Chat", async () => {
-        dialog.show(false);
-      });
-      element.append(dialog);
-      element.append(btn);
-    } else {
-      await this.initializeChat(element, entityState, false);
     }
   }
 
