@@ -159,7 +159,7 @@ namespace Microsoft.Teams.EmbeddedChat
                 var chatInfo = await ChatInfoActivity.CreateOnlineMeetingAsync(requestData, _graphService, _log);
 
                 // 2. create a new ACS Client and fill the info to the entity state
-                var acsInfo = await AcsClientActivity.CreateACSClientAsync(_appConfiguration, _log);
+                var acsInfo = await AcsClientActivity.CreateACSClientAsync(requestData, _appConfiguration, _graphService, _log);
 
                 // 3. Create a new Entity State
                 var newState = new EntityState

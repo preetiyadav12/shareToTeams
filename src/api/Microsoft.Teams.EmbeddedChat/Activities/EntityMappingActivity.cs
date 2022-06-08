@@ -54,6 +54,8 @@ public static class EntityMappingActivity
         }
         catch (System.Exception e)
         {
+            if (e.InnerException != null)
+                logger.LogError(e.InnerException.Message);
             logger.LogError(e.Message);
             throw;
         }
@@ -110,6 +112,8 @@ public static class EntityMappingActivity
         }
         catch (Exception e)
         {
+            if (e.InnerException != null)
+                logger.LogError(e.InnerException.Message);
             logger.LogError(e.Message);
             return (false, entityState);
         }
@@ -160,6 +164,8 @@ public static class EntityMappingActivity
         }
         catch (Exception e)
         {
+            if (e.InnerException != null)
+                logger.LogError(e.InnerException.Message);
             logger.LogError(e.Message);
             throw;
         }

@@ -13,6 +13,9 @@ namespace Microsoft.Teams.EmbeddedChat.Models
 
         [JsonPropertyName("tokenExpiresOn")]
         public string TokenExpiresOn { get; set; }
+
+        [JsonPropertyName("commIdentityToken")]
+        public string CommIdentityToken { get; set; }
     }
 }
 

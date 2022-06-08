@@ -8,6 +8,9 @@ namespace Microsoft.Teams.EmbeddedChat.Services
     public interface IGraphService
     {
         void GetGraphServiceClient(string userToken, ILogger logger);
+
+        Task<string> GetTeamsUserAadToken(string scope, string userToken, ILogger logger);
+
         Task<OnlineMeeting> CreateOnlineMeetingAsync(ChatInfoRequest requestData);
         Task<Models.Person[]> GetParticipantsListAsync(MeetingRequest meetingRequest);
     }
