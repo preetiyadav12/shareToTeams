@@ -1,7 +1,5 @@
-﻿using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+﻿using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Teams.EmbeddedChat.Activities;
 using Microsoft.Teams.EmbeddedChat.Models;
 using Microsoft.Teams.EmbeddedChat.Services;
@@ -30,12 +28,10 @@ namespace Microsoft.Teams.EmbeddedChat
         /// </summary>
         /// <param name="requestData"></param>
         /// <param name="request"></param>
-        /// <param name="durableContext"></param>
         /// <returns></returns>
         public async Task<HttpResponseData> GetEntity(
             ChatInfoRequest requestData,
-            HttpRequestData request,
-            DurableClientContext durableContext)
+            HttpRequestData request)
         {
             _log.LogInformation($"Started function {nameof(GetEntity)} for the Entity ID: '{requestData.EntityId}'.");
 
@@ -134,12 +130,10 @@ namespace Microsoft.Teams.EmbeddedChat
         /// </summary>
         /// <param name="requestData"></param>
         /// <param name="request"></param>
-        /// <param name="durableContext"></param>
         /// <returns></returns>
         public async Task<HttpResponseData> CreateEntity(
             ChatInfoRequest requestData,
-            HttpRequestData request,
-            DurableClientContext durableContext)
+            HttpRequestData request)
         {
             _log.LogInformation($"Started function {nameof(CreateEntity)} for the Entity ID: '{requestData.EntityId}'.");
 

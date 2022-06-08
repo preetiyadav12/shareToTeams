@@ -34,7 +34,6 @@ public class EntityMappingFunctions
     /// HTTP-triggered function that starts the <see cref="EntityMappingOrchestration"/> orchestration.
     /// </summary>
     /// <param name="req">The HTTP request that was used to trigger this function.</param>
-    /// <param name="durableContext">The Durable Functions client binding context object that is used to start and manage orchestration instances.</param>
     /// <param name="executionContext">The Azure Functions execution context, which is available to all function types.</param>
     /// <returns>Returns an HTTP response with more information about the started orchestration instance.</returns>
     [Authorize(
@@ -42,7 +41,6 @@ public class EntityMappingFunctions
     [Function(nameof(GetEntityMapping))]
     public async Task<HttpResponseData> GetEntityMapping(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = HttpRoutes.GetEntityStateRoute)] HttpRequestData req,
-        [DurableClient] DurableClientContext durableContext,
         FunctionContext executionContext)
     {
         try
@@ -59,7 +57,7 @@ public class EntityMappingFunctions
             _logger.LogInformation(
                 $"The Function {nameof(GetEntityMapping)} was triggered by {requestData?.Owner?.DisplayName}");
 
-            var response = await _process.GetEntity(requestData, req, durableContext);
+            var response = await _process.GetEntity(requestData, req);
 
             return response;
         }
@@ -75,7 +73,6 @@ public class EntityMappingFunctions
     /// HTTP-triggered function that starts the <see cref="EntityMappingOrchestration"/> orchestration.
     /// </summary>
     /// <param name="req">The HTTP request that was used to trigger this function.</param>
-    /// <param name="durableContext">The Durable Functions client binding context object that is used to start and manage orchestration instances.</param>
     /// <param name="executionContext">The Azure Functions execution context, which is available to all function types.</param>
     /// <returns>Returns an HTTP response with more information about the started orchestration instance.</returns>
     [Authorize(
@@ -83,7 +80,6 @@ public class EntityMappingFunctions
     [Function(nameof(CreateEntityMapping))]
     public async Task<HttpResponseData> CreateEntityMapping(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = HttpRoutes.CreateEntityStateRoute)] HttpRequestData req,
-        [DurableClient] DurableClientContext durableContext,
         FunctionContext executionContext)
     {
         try
@@ -100,7 +96,7 @@ public class EntityMappingFunctions
             _logger.LogInformation(
                 $"The Function {nameof(CreateEntityMapping)} was triggered by {requestData?.Owner?.DisplayName}");
 
-            var response = await _process.CreateEntity(requestData, req, durableContext);
+            var response = await _process.CreateEntity(requestData, req);
             return response;
         }
         catch (System.Exception ex)
