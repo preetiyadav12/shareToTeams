@@ -28,6 +28,7 @@ export class EmbeddedChat {
   private graphAuthResult?: AuthInfo;
   private appAuthResult?: AuthInfo;
   private errorDialogue: ErrorDescriptorDialogue;
+  private chatTitle?: string;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -52,6 +53,7 @@ export class EmbeddedChat {
   public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
     const entityId = embedChatConfig.entityId;
     this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
+    this.chatTitle = embedChatConfig.topicName ? embedChatConfig.topicName : `Chat for ${entityId}`;
 
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
@@ -61,7 +63,12 @@ export class EmbeddedChat {
     this.waiting.show();
 
     // get graph token and then application token
-    this.graphAuthResult = await AuthUtil.acquireToken(element, AuthUtil.graphDefaultScope, this.appSettings, this.waiting);
+    this.graphAuthResult = await AuthUtil.acquireToken(
+      element,
+      AuthUtil.graphDefaultScope,
+      this.appSettings,
+      this.waiting,
+    );
     console.log(this.graphAuthResult);
 
     if (!this.graphAuthResult) {
@@ -73,7 +80,12 @@ export class EmbeddedChat {
       return;
     }
 
-    this.appAuthResult = await AuthUtil.acquireToken(element, `api://${this.appSettings.clientId}/access_as_user`, this.appSettings, this.waiting);
+    this.appAuthResult = await AuthUtil.acquireToken(
+      element,
+      `api://${this.appSettings.clientId}/access_as_user`,
+      this.appSettings,
+      this.waiting,
+    );
     console.log(this.appAuthResult);
     if (!this.appAuthResult) {
       const msg = "appAuthResult cannot be null!";
@@ -97,7 +109,7 @@ export class EmbeddedChat {
     const chatRequest: ChatInfoRequest = {
       entityId,
       owner: chatOwner,
-      topic: (embedChatConfig.topicName) ? embedChatConfig.topicName : `Chat for ${entityId}`,
+      topic: embedChatConfig.topicName ? embedChatConfig.topicName : `Chat for ${entityId}`,
       participants: [],
       correlationId: uuidv4(),
       isSuccess: false,
@@ -153,7 +165,7 @@ export class EmbeddedChat {
       } else {
         await this.initializeChat(element, entityState, false);
       }
-    } catch(err){
+    } catch (err) {
       element.prepend(this.errorDialogue);
       this.errorDialogue.printError("Error while retriving entityState");
       this.waiting.hide();
@@ -161,34 +173,56 @@ export class EmbeddedChat {
   }
 
   private initializeChat = async (element: Element, entityState: EntityState, isNew: boolean) => {
-    // Hide the waiting indicator
-    this.waiting.hide();
+    // Wait until the chat is initialized
+    this.waiting.show();
 
     console.log(`Entity State: ${entityState}`);
     console.log(entityState);
 
+    // Joining the meeting from the client
+    console.log("Joining the Teams meeting...");
+    const ccreds = new AzureCommunicationTokenCredential(entityState.acsInfo.commIdentityToken);
+    const callTeamsClient = new CallClient({});
+    const callTeamsAgent = await callTeamsClient.createCallAgent(ccreds);
+    const locator = { meetingLink: entityState.chatInfo.joinUrl };
+    const teamsMeetingCall = callTeamsAgent.join(locator);
+    console.log(`User is joining teams Meeting call Id: ${teamsMeetingCall.id}`);
+
+    // Create a device manager to set up video and audio settings
+    const userDeviceManager = await callTeamsClient.getDeviceManager();
+    //Prompt a user to grant camera and/or microphone permissions, more info can be found
+    //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
+    const deviceResult = await userDeviceManager.askDevicePermission({ audio: true, video: true });
+    //This resolves with an object that indicates whether audio and video permissions were granted
+    console.log(`Audio Enabled: ${deviceResult.audio}`);
+    console.log(`Video Enabled: ${deviceResult.video}`);
+
     // // initialize the ACS Client
     console.log("Initializing ACS Client...");
-    this.creds = new AzureCommunicationTokenCredential(entityState.acsInfo.acsToken!);
+    this.creds = new AzureCommunicationTokenCredential(entityState.acsInfo.acsToken);
     this.chatClient = new ChatClient(this.appSettings.acsEndpoint!, this.creds);
 
-    // start the realtime notificationa
-    await this.chatClient.startRealtimeNotifications();
+    // Create a call client
+    const callClient = new CallClient({});
 
     // establish the call
-    const callClient = new CallClient({});
-    const deviceManager = await callClient.getDeviceManager();
-    //Prompt a user to grant camera and/or microphone permissions, more info can be found 
-    //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
-    const result = await deviceManager.askDevicePermission({audio: false, video: false});
-    //This resolves with an object that indicates whether audio and video permissions were granted
-    console.log(result.audio);
-    console.log(result.video);
     const callAgent = await callClient.createCallAgent(this.creds, { displayName: "My 3rd Party App" });
-    const locator = { meetingLink: entityState.chatInfo.joinUrl };
     const meetingCall = callAgent.join(locator);
+    console.log(`ACS Meeting initialied with call Id: ${meetingCall.id}`);
 
-    console.log(`Meeting call Id: ${meetingCall.id}`);
+    // Create a device manager to set up video and audio settings
+    // const deviceManager = await callClient.getDeviceManager();
+
+    // //Prompt a user to grant camera and/or microphone permissions, more info can be found
+    // //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
+    // const result = await deviceManager.askDevicePermission({ audio: true, video: false });
+    // //This resolves with an object that indicates whether audio and video permissions were granted
+    // console.log(result.audio);
+    // console.log(result.video);
+
+    console.log("Start listening to realtime ACS Notifications");
+    // start the realtime notifications
+    await this.chatClient.startRealtimeNotifications();
 
     // load the existing thread messages if this is an existing chat
     const messages: Message[] = [];
@@ -230,16 +264,16 @@ export class EmbeddedChat {
       });
     }
 
-    // inert the appComponent
-    const appComponent: AppContainer = new AppContainer(messages, "TODO: Hello World", this.graphAuthResult!, entityState);
+    // insert the appComponent
+    const appComponent: AppContainer = new AppContainer(messages, this.chatTitle!, this.graphAuthResult!, entityState);
     element.appendChild(appComponent);
-
-    //hide waiting indicator to show UI
-    this.waiting.hide();
 
     // listen for events
     this.chatClient.on("chatMessageReceived", async (e: any) => {
-      console.log("TODO: chatMessageReceived");
+      //hide waiting indicator to show UI
+      this.waiting.hide();
+
+      console.log(`chatMessageReceived event received with this message: ${e.message}`);
       console.log(e);
 
       // send the message to the appContainer
@@ -260,18 +294,27 @@ export class EmbeddedChat {
     this.chatClient.on("chatMessageEdited", async (e) => {
       console.log("TODO: chatMessageEdited");
       console.log(e);
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
     this.chatClient.on("chatMessageDeleted", async (e) => {
       console.log("TODO: chatMessageDeleted");
       console.log(e);
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
     this.chatClient.on("participantsAdded", async (e) => {
       console.log("TODO: participantsAdded");
       console.log(e);
+
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
     this.chatClient.on("participantsRemoved", async (e) => {
       console.log("TODO: participantsRemoved");
       console.log(e);
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
   };
 }

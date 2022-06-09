@@ -98,6 +98,45 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         }
 
 
+
+        /// <summary>
+        /// Get the token for the Teams user through the Token Exchange flow
+        /// </summary>
+        /// <param name="scope"></param>
+        /// <param name="userToken"></param>
+        /// <param name="logger"></param>
+        /// <returns></returns>
+        /// <exception cref="ApplicationException"></exception>
+        public async Task<string> GetTeamsUserAadToken(string scope, string userToken, ILogger logger)
+        {
+            this._logger = logger;
+            try
+            {
+                // Multi-tenant apps can use "common",
+                // single-tenant apps must use the tenant ID from the Azure portal
+                // using Azure.Identity;
+                var options = new TokenCredentialOptions
+                {
+                    AuthorityHost = AzureAuthorityHosts.AzurePublicCloud
+                };
+
+                // Use Microsoft.Identity.Client to retrieve token
+                var assertion = new UserAssertion(userToken);
+                var teamsUserAadToken = await cca.AcquireTokenOnBehalfOf(new List<string> { scope }, assertion).ExecuteAsync();
+                return teamsUserAadToken?.AccessToken;
+            }
+            catch (MsalUiRequiredException e)
+            {
+                string failureReason = "Failed to receive the Azure AD user token for Teams User";
+                if (e.Classification == UiRequiredExceptionClassification.ConsentRequired)
+                {
+                    failureReason = "The user or admin has not provided sufficient consent for the application";
+                }
+                _logger.LogError(failureReason);
+                throw new ApplicationException(failureReason);
+            }
+        }
+
         /// <summary>
         /// Create a new Online Meeting
         /// </summary>
@@ -115,6 +154,7 @@ namespace Microsoft.Teams.EmbeddedChat.Services
 
                 foreach (var participant in requestData.Participants)
                 {
+                    if (participant == null) continue;
                     var member = new MeetingParticipantInfo
                     {
                         Upn = participant.UserPrincipalName,

@@ -12,12 +12,10 @@ namespace Microsoft.Teams.EmbeddedChat
     {
         Task<HttpResponseData> GetEntity(
             ChatInfoRequest requestData,
-            HttpRequestData request,
-            DurableClientContext durableContext);
+            HttpRequestData request);
 
         Task<HttpResponseData> CreateEntity(
             ChatInfoRequest requestData,
-            HttpRequestData request,
-            DurableClientContext durableContext);
+            HttpRequestData request);
     }
 }

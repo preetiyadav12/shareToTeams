@@ -14,18 +14,33 @@ namespace Microsoft.Teams.EmbeddedChat.ACS
         private readonly CommunicationIdentityClient identityClient;
         private CommunicationTokenScope[] communicationTokenScopes;
 
+        /// <summary>
+        /// Constructor with resource's endpoint Uri
+        /// </summary>
+        /// <param name="resourceEndpoint"></param>
+        /// <param name="communicationTokenScopes"></param>
         public CommServices(Uri resourceEndpoint, CommunicationTokenScope[] communicationTokenScopes)
         {
             this.identityClient = new CommunicationIdentityClient(resourceEndpoint, this.tokenCredential);
             this.communicationTokenScopes = communicationTokenScopes;
         }
 
+        /// <summary>
+        /// Constructor with resource's connection string
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <param name="communicationTokenScopes"></param>
         public CommServices(string connectionString, CommunicationTokenScope[] communicationTokenScopes)
         {
             this.identityClient = new CommunicationIdentityClient(connectionString);
             this.communicationTokenScopes = communicationTokenScopes;
         }
 
+
+        /// <summary>
+        /// Creates ACS Identity User and the ACS Token
+        /// </summary>
+        /// <returns></returns>
         public async Task<(string userId, string accessToken, DateTimeOffset expiresOn)> CreateIdentityAndGetTokenAsync()
         {
             // Create an identity
@@ -58,6 +73,21 @@ namespace Microsoft.Teams.EmbeddedChat.ACS
             var identityToRefresh = new CommunicationUserIdentifier(acsUserId);
             var tokenResponse = await this.identityClient.GetTokenAsync(identityToRefresh, scopes: this.communicationTokenScopes);
             return tokenResponse.Value;
+        }
+
+
+        /// <summary>
+        /// Use the GetTokenForTeamsUser method to issue an access token for the Teams user that can be used with the Azure Communication Services SDKs.
+        /// </summary>
+        /// <param name="teamsUserAccessToken"></param>
+        /// <returns></returns>
+        public async Task<string> GetTokenForTeamsUserAsync(string teamsUserAccessToken)
+        {
+            var accessToken = await this.identityClient.GetTokenForTeamsUserAsync(teamsUserAccessToken);
+            if (accessToken == null)
+                throw new ApplicationException("Failed to obtain the access token for the Teams User");
+
+            return accessToken.Value.Token;
         }
     }
 }
