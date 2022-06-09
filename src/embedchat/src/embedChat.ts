@@ -53,7 +53,7 @@ export class EmbeddedChat {
   public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
     const entityId = embedChatConfig.entityId;
     this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
-    this.chatTitle = embedChatConfig.topicName ? embedChatConfig.topicName : `Chat for ${entityId}`;
+    this.chatTitle = `Entity: ${entityId} - ${embedChatConfig.topicName ? embedChatConfig.topicName : " Group Chat"}`;
 
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
@@ -109,7 +109,7 @@ export class EmbeddedChat {
     const chatRequest: ChatInfoRequest = {
       entityId,
       owner: chatOwner,
-      topic: embedChatConfig.topicName ? embedChatConfig.topicName : `Chat for ${entityId}`,
+      topic: this.chatTitle,
       participants: [],
       correlationId: uuidv4(),
       isSuccess: false,
@@ -192,7 +192,7 @@ export class EmbeddedChat {
     const userDeviceManager = await callTeamsClient.getDeviceManager();
     //Prompt a user to grant camera and/or microphone permissions, more info can be found
     //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
-    const deviceResult = await userDeviceManager.askDevicePermission({ audio: true, video: true });
+    const deviceResult = await userDeviceManager.askDevicePermission({ audio: false, video: true });
     //This resolves with an object that indicates whether audio and video permissions were granted
     console.log(`Audio Enabled: ${deviceResult.audio}`);
     console.log(`Video Enabled: ${deviceResult.video}`);
@@ -307,8 +307,12 @@ export class EmbeddedChat {
       console.log("TODO: participantsAdded");
       console.log(e);
 
-      //hide waiting indicator to show UI
-      this.waiting.hide();
+      if (!this.waiting.hidden) {
+        // Hang up on the initial call
+        teamsMeetingCall.hangUp();
+        //hide waiting indicator to show UI
+        this.waiting.hide();
+      }
     });
     this.chatClient.on("participantsRemoved", async (e) => {
       console.log("TODO: participantsRemoved");
