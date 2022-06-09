@@ -28,6 +28,7 @@ export class EmbeddedChat {
   private graphAuthResult?: AuthInfo;
   private appAuthResult?: AuthInfo;
   private errorDialogue: ErrorDescriptorDialogue;
+  private chatTitle?: string;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -52,6 +53,7 @@ export class EmbeddedChat {
   public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
     const entityId = embedChatConfig.entityId;
     this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
+    this.chatTitle = embedChatConfig.topicName ? embedChatConfig.topicName : `Chat for ${entityId}`;
 
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
@@ -171,8 +173,8 @@ export class EmbeddedChat {
   }
 
   private initializeChat = async (element: Element, entityState: EntityState, isNew: boolean) => {
-    // Hide the waiting indicator
-    this.waiting.hide();
+    // Wait until the chat is initialized
+    this.waiting.show();
 
     console.log(`Entity State: ${entityState}`);
     console.log(entityState);
@@ -184,17 +186,16 @@ export class EmbeddedChat {
     const callTeamsAgent = await callTeamsClient.createCallAgent(ccreds);
     const locator = { meetingLink: entityState.chatInfo.joinUrl };
     const teamsMeetingCall = callTeamsAgent.join(locator);
-    console.log(`Teams Meeting call Id: ${teamsMeetingCall.id}`);
+    console.log(`User is joining teams Meeting call Id: ${teamsMeetingCall.id}`);
 
     // Create a device manager to set up video and audio settings
     const userDeviceManager = await callTeamsClient.getDeviceManager();
-
-    // //Prompt a user to grant camera and/or microphone permissions, more info can be found
-    // //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
-    // const deviceResult = await userDeviceManager.askDevicePermission({ audio: false, video: false });
-    // //This resolves with an object that indicates whether audio and video permissions were granted
-    // console.log(deviceResult.audio);
-    // console.log(deviceResult.video);
+    //Prompt a user to grant camera and/or microphone permissions, more info can be found
+    //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
+    const deviceResult = await userDeviceManager.askDevicePermission({ audio: true, video: true });
+    //This resolves with an object that indicates whether audio and video permissions were granted
+    console.log(`Audio Enabled: ${deviceResult.audio}`);
+    console.log(`Video Enabled: ${deviceResult.video}`);
 
     // // initialize the ACS Client
     console.log("Initializing ACS Client...");
@@ -207,18 +208,19 @@ export class EmbeddedChat {
     // establish the call
     const callAgent = await callClient.createCallAgent(this.creds, { displayName: "My 3rd Party App" });
     const meetingCall = callAgent.join(locator);
-    console.log(`ACS Meeting call Id: ${meetingCall.id}`);
+    console.log(`ACS Meeting initialied with call Id: ${meetingCall.id}`);
 
     // Create a device manager to set up video and audio settings
-    const deviceManager = await callClient.getDeviceManager();
+    // const deviceManager = await callClient.getDeviceManager();
 
     // //Prompt a user to grant camera and/or microphone permissions, more info can be found
     // //https://docs.microsoft.com/en-us/azure/communication-services/how-tos/calling-sdk/manage-video?pivots=platform-web
-    // const result = await deviceManager.askDevicePermission({ audio: false, video: false });
+    // const result = await deviceManager.askDevicePermission({ audio: true, video: false });
     // //This resolves with an object that indicates whether audio and video permissions were granted
     // console.log(result.audio);
     // console.log(result.video);
 
+    console.log("Start listening to realtime ACS Notifications");
     // start the realtime notifications
     await this.chatClient.startRealtimeNotifications();
 
@@ -262,20 +264,15 @@ export class EmbeddedChat {
       });
     }
 
-    // inert the appComponent
-    const appComponent: AppContainer = new AppContainer(
-      messages,
-      "TODO: Hello World",
-      this.graphAuthResult!,
-      entityState,
-    );
+    // insert the appComponent
+    const appComponent: AppContainer = new AppContainer(messages, this.chatTitle!, this.graphAuthResult!, entityState);
     element.appendChild(appComponent);
-
-    //hide waiting indicator to show UI
-    this.waiting.hide();
 
     // listen for events
     this.chatClient.on("chatMessageReceived", async (e: any) => {
+      //hide waiting indicator to show UI
+      this.waiting.hide();
+
       console.log(`chatMessageReceived event received with this message: ${e.message}`);
       console.log(e);
 
@@ -297,21 +294,27 @@ export class EmbeddedChat {
     this.chatClient.on("chatMessageEdited", async (e) => {
       console.log("TODO: chatMessageEdited");
       console.log(e);
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
     this.chatClient.on("chatMessageDeleted", async (e) => {
       console.log("TODO: chatMessageDeleted");
       console.log(e);
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
     this.chatClient.on("participantsAdded", async (e) => {
       console.log("TODO: participantsAdded");
-      console.log("Hanging up the meeting");
-      await teamsMeetingCall.hangUp();
-
       console.log(e);
+
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
     this.chatClient.on("participantsRemoved", async (e) => {
       console.log("TODO: participantsRemoved");
       console.log(e);
+      //hide waiting indicator to show UI
+      this.waiting.hide();
     });
   };
 }
