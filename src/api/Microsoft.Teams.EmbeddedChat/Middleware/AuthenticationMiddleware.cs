@@ -24,8 +24,12 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
 
         public AuthenticationMiddleware(IConfiguration configuration)
         {
-            var authority = $"{configuration["AuthenticationAuthority"]}/{configuration["AZURE_TENANT_ID"]}/v2.0";
-            var audience = configuration["AZURE_CLIENT_ID"];
+            var authority = (configuration["AuthenticationAuthority"].IndexOf("login.microsoftonline.com") == -1) 
+                ? $"{configuration["AuthenticationAuthority"]}/{configuration["AZURE_TENANT_ID"]}"
+                : $"{configuration["AuthenticationAuthority"]}/{configuration["AZURE_TENANT_ID"]}/v2.0";
+            var audience = (configuration["AuthenticationAuthority"].IndexOf("sts.windows.net") == -1) 
+                ? configuration["AZURE_CLIENT_ID"] 
+                : $"api://{configuration["AZURE_CLIENT_ID"]}";
             _tokenValidator = new JwtSecurityTokenHandler();
             _tokenValidationParameters = new TokenValidationParameters
             {

@@ -28,7 +28,7 @@ export class EmbeddedChat {
   private graphAuthResult?: AuthInfo;
   private appAuthResult?: AuthInfo;
   private errorDialogue: ErrorDescriptorDialogue;
-  private chatTitle?: string;
+  private topicName?: string;
 
   constructor(config: AppSettings) {
     this.appSettings = config;
@@ -53,7 +53,7 @@ export class EmbeddedChat {
   public async renderEmbed(element: Element, embedChatConfig: EmbedChatConfig) {
     const entityId = embedChatConfig.entityId;
     this.topHistoryMessages = embedChatConfig.topHistoryMessages ?? this.topHistoryMessages;
-    this.chatTitle = `Entity: ${entityId} - ${embedChatConfig.topicName ? embedChatConfig.topicName : " Group Chat"}`;
+    this.topicName = (embedChatConfig.topicName) ? embedChatConfig.topicName : `Entity: ${entityId} - ${embedChatConfig.topicName ? embedChatConfig.topicName : " Group Chat"}`;
 
     console.log(`HTML Element: ${element.id}`);
     console.log(`Entity Id: ${entityId}`);
@@ -109,7 +109,7 @@ export class EmbeddedChat {
     const chatRequest: ChatInfoRequest = {
       entityId,
       owner: chatOwner,
-      topic: this.chatTitle,
+      topic: this.topicName,
       participants: [],
       correlationId: uuidv4(),
       isSuccess: false,
@@ -206,7 +206,7 @@ export class EmbeddedChat {
     const callClient = new CallClient({});
 
     // establish the call
-    const callAgent = await callClient.createCallAgent(this.creds, { displayName: "My 3rd Party App" });
+    const callAgent = await callClient.createCallAgent(this.creds, { displayName: this.appSettings.guestAccountName });
     const meetingCall = callAgent.join(locator);
     console.log(`ACS Meeting initialied with call Id: ${meetingCall.id}`);
 
@@ -265,7 +265,7 @@ export class EmbeddedChat {
     }
 
     // insert the appComponent
-    const appComponent: AppContainer = new AppContainer(messages, this.chatTitle!, this.graphAuthResult!, entityState);
+    const appComponent: AppContainer = new AppContainer(messages, this.topicName!, this.graphAuthResult!, entityState);
     element.appendChild(appComponent);
 
     // listen for events

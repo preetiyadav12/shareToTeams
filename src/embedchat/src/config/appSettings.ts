@@ -4,4 +4,5 @@ export interface AppSettings {
   clientId: string;
   tenant: string;
   acsEndpoint: string;
+  guestAccountName: string;
 }
