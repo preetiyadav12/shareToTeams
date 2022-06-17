@@ -58,6 +58,10 @@ namespace Microsoft.Teams.EmbeddedChat
                             AccessToken = ExtractJWToken(request.Headers.GetValues("Authorization").First()) // extract access token from the header
                         };
 
+                        //Refresh teams user token
+                        await EntityMappingActivity.UpdateEntityTokenStateAsync(entity, _appConfiguration, _log, meetingRequest.AccessToken, _graphService);
+
+
                         // Get the updated list of all chat participants
                         var participants = await ParticipantsActivity.GetParticipantsAsync(meetingRequest, _graphService, _log);
 
