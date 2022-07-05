@@ -11,6 +11,10 @@ export class PhotoUtil {
       return this.pics[id];
     }
     else {
+      // while fetching for the first time
+      // set the image to empty
+      this.pics[id] = this.emptyPic;
+
       const resp = await fetch(`https://graph.microsoft.com/v1.0/users/${id}/photos/48x48/$value`, {
         method: "GET",
         headers: new Headers({
@@ -19,15 +23,13 @@ export class PhotoUtil {
         }),
       });
 
-      if (!resp.ok) {
-        this.pics[id] = this.emptyPic;
-        return this.pics[id];
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = window.URL || window.webkitURL;
+        const objectURL = url.createObjectURL(blob);
+        this.pics[id] = objectURL;
       }
 
-      const blob = await resp.blob();
-      const url = window.URL || window.webkitURL;
-      const objectURL = url.createObjectURL(blob);
-      this.pics[id] = objectURL;
       return this.pics[id];
     }
   };

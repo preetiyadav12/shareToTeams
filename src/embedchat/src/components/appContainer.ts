@@ -71,6 +71,7 @@ export class AppContainer extends HTMLElement {
   private mentionInput: string;
   private personList: Person[];
   private entityState: EntityState;
+  private uniqueSenderIds: Set<string>;
   constructor(messages: Message[], chatTitle: string, authInfo: AuthInfo, entityState: EntityState) {
     super();
     this.chatTitle = chatTitle;
@@ -82,28 +83,37 @@ export class AppContainer extends HTMLElement {
     this.mentionInput = "";
     this.personList = [];
     this.entityState = entityState;
+    this.uniqueSenderIds = new Set();
     this.render();
   }
 
   messageReceived = async (message: Message) => {
-    await this.renderMessage(message);
+    this.renderMessage(message);
+    await this.renderUserImage(message.sender.id);
     this.messages.push(message);
   };
 
-  renderMessage = async (message: Message) => {
+  renderMessage = (message: Message) => {
     message.sender.photo = this.photoUtil.emptyPic;
-    await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, message.sender.id).then((pic: string) => {
-      message.sender.photo = pic;
-      //chatItem.refresh(message);
-    });
     const chatItem: ChatItem = new ChatItem(message, message.sender.id == this.authInfo.uniqueId);
 
     const chatItems = <HTMLElement>this.querySelector(".teams-embed-chat-items");
     chatItems.appendChild(chatItem);
 
-    const chatContainer = <HTMLElement>document.querySelector(".teams-embed-chat");
+    const chatContainer = <HTMLElement>this.querySelector(".teams-embed-chat");
     chatContainer.scrollTop = chatContainer.scrollHeight;
   };
+
+  renderUserImage = async (id: string) => {
+    if (this.authInfo.uniqueId == id) return;
+    await this.photoUtil.getGraphPhotoAsync(this.authInfo.accessToken, id).then((pic: string) => {
+      const userMessages = document.getElementsByClassName(id);
+      for (let i = 0; i < userMessages.length; i++) {
+        const element = userMessages[i];
+        (<HTMLImageElement>element.querySelector(".teams-embed-avatar-image")).src = pic;
+      }
+    });
+  }
 
   mentionSelected = (selectedIndex: number) => {
     const selectedUser = this.mentionResults[selectedIndex];
@@ -182,24 +192,8 @@ export class AppContainer extends HTMLElement {
   };
 
   sendMessage = async () => {
-    const replaceEmptyDiv = "<div><br></div>";
     const input = <HTMLElement>document.querySelector(".teams-embed-footer-input");
     if (input.textContent?.trim() === "") return;
-    const person: Person = {
-      id: "asdf",
-      userPrincipalName: "asdf",
-      displayName: "asdf",
-      photo: "asdf",
-    };
-    // const message: Message = {
-    //   message: input.innerHTML.replace(replaceEmptyDiv, ""),
-    //   sender: person,
-    //   id: "asdf",
-    //   threadId: "asdf",
-    //   version: "asdf",
-    //   type: "asdf",
-    //   createdOn: new Date(),
-    // };
 
     // call graph to get matches
     const results = await GraphUtil.sendChatMessage(
@@ -266,9 +260,16 @@ export class AppContainer extends HTMLElement {
 
     this.appendChild(dom);
 
-    this.messages.map(async (message) => {
-      await this.renderMessage(message);
+    // render all messages
+    this.messages.map((message) => {
+      this.uniqueSenderIds.add(message.sender.id);
+      this.renderMessage(message);
     });
+
+    // fetch all message sender photos once
+    this.uniqueSenderIds.forEach(async (id) => {
+      await this.renderUserImage(id);
+    })
   };
 }
 
