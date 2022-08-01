@@ -1,5 +1,6 @@
 export interface AppSettings {
-  hostDomain: string;
+  privateHost: string;
+  publicHost: string;
   apiBaseUrl: string;
   clientId: string;
   tenant: string;

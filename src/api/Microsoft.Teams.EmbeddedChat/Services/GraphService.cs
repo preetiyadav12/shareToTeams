@@ -6,7 +6,6 @@ using Microsoft.Teams.EmbeddedChat.Models;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Microsoft.Teams.EmbeddedChat.Services
 {
@@ -17,9 +16,6 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         // app registration in Azure. An administrator must grant consent
         // to those permissions beforehand.
         private string[] scopes = new[] { "https://graph.microsoft.com/.default" };
-        private readonly string clientId;
-        private readonly string clientSecret;
-        private readonly string tenantId;
         private readonly IConfidentialClientApplication cca;
 
         private GraphServiceClient _graphServiceClient;
@@ -29,29 +25,27 @@ namespace Microsoft.Teams.EmbeddedChat.Services
         /// <summary>
         /// Constructor: create graph service client 
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <param name="clientSecret"></param>
-        /// /// <param name="tenantId"></param>
-        public GraphService()
+        /// <param name="appSettings"></param>
+        public GraphService(AppSettings appSettings)
         {
-            clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
-            clientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET");
-            tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
-            if (String.IsNullOrEmpty(clientId))
-                throw new ArgumentException("Missing AZURE_CLIENT_ID environment variable");
-            if (String.IsNullOrEmpty(clientSecret))
-                throw new ArgumentException("Missing AZURE_CLIENT_SECRET environment variable");
-            if (String.IsNullOrEmpty(tenantId))
-                throw new ArgumentException("Missing AZURE_TENANT_ID environment variable");
+            // check if the App Settings were initialized correctly
+            var (isConfigInitialized, errMsg) = AppSettings.IsInitialized(appSettings);
 
+            if (!isConfigInitialized)
+            {
+                throw new Exception(errMsg);
+            }
 
             cca = ConfidentialClientApplicationBuilder
-                .Create(clientId)
-                .WithClientSecret(clientSecret)
-                .WithTenantId(tenantId)
-                .WithAuthority($"https://login.microsoftonline.com/{tenantId}")
+                .Create(appSettings.ClientId)
+                .WithClientSecret(appSettings.ClientSecret)
+                .WithTenantId(appSettings.TenantId)
+                .WithAuthority($"{appSettings.AuthenticationAuthority}/{appSettings.TenantId}")
                 .Build();
         }
+
+
+
 
         /// <summary>
         /// create GraphServiceClient

@@ -1,0 +1,23 @@
+include:
+  - location: westus3
+    orgName: ms
+    projectName: embchat
+    resourceGroup: rg
+    storageAccount: sa
+    environmentName: dev2 
+    serviceName: api
+    containerName: web
+    pinnedRef: refs/heads/main
+    secretArmClientId: ARM_CLIENT_ID
+    secretArmClientSecret: ARM_CLIENT_SECRET
+    secretTenantId: ARM_TENANT_ID
+    secretSubscriptionId: ARM_SUBSCRIPTION_ID
+    servicePrincipalObjectId: SERVICE_PRINCIPAL_OBJECT_ID
+    secretAppClientId: APP_CLIENT_ID
+    secretAppClientSecret: APP_CLIENT_SECRET
+    secretSasStartDate: SAS_START_DATE
+    secretSasEndDate: SAS_END_DATE
+    terraformBackendStorageAccountName: msembchatdevtfstatesa
+    terraformResourceGroupName: ms-embchat-dev-tfstate-rg
+    terraformBackendStorageContainerName: tfstate-dev2
+    repoHomePath: /home/runner/work/EmbeddedChat/EmbeddedChat

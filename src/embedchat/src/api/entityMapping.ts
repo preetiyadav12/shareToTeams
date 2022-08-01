@@ -22,6 +22,9 @@ export class EntityApi {
       headers: {
         Authorization: `Bearer ${this.appAccessToken}`,
         "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "DELETE, POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
       },
       body: JSON.stringify(chatInfoRequest),
     };
@@ -54,6 +57,9 @@ export class EntityApi {
       headers: new Headers({
         Authorization: `Bearer ${this.appAccessToken}`,
         "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "DELETE, POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
       }),
       body: JSON.stringify(chatInfoRequest),
     };

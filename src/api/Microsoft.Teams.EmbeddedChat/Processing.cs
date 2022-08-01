@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Teams.EmbeddedChat.Activities;
 using Microsoft.Teams.EmbeddedChat.Models;
@@ -196,7 +197,7 @@ namespace Microsoft.Teams.EmbeddedChat
         /// </summary>
         /// <param name="authorization"></param>
         /// <returns></returns>
-        private static string ExtractJWToken(string authorization)
+        public static string ExtractJWToken(string authorization)
         {
             return authorization.StartsWith("Bearer") ? authorization.Split(" ").Last() :
                 authorization;

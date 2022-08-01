@@ -1,7 +1,6 @@
-﻿using Dynamitey;
-using Microsoft.Azure.Functions.Worker;
+﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -11,6 +10,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -21,19 +21,31 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
         private readonly JwtSecurityTokenHandler _tokenValidator;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
+        private readonly ILogger<AuthenticationMiddleware> _logger;
+        private readonly IList<string> _validAudiences;
 
-        public AuthenticationMiddleware(IConfiguration configuration)
+
+        public AuthenticationMiddleware(AppSettings appSettings, ILogger<AuthenticationMiddleware> logger)
         {
-            var authority = (configuration["AuthenticationAuthority"].IndexOf("login.microsoftonline.com") == -1) 
-                ? $"{configuration["AuthenticationAuthority"]}/{configuration["AZURE_TENANT_ID"]}"
-                : $"{configuration["AuthenticationAuthority"]}/{configuration["AZURE_TENANT_ID"]}/v2.0";
-            var audience = (configuration["AuthenticationAuthority"].IndexOf("sts.windows.net") == -1) 
-                ? configuration["AZURE_CLIENT_ID"] 
-                : $"api://{configuration["AZURE_CLIENT_ID"]}";
+            _logger = logger;
+            var (isConfigInitialized, errMsg) = AppSettings.IsInitialized(appSettings);
+
+            if (!isConfigInitialized)
+            {
+                throw new Exception(errMsg);
+            }
+
+            var authority = (appSettings.AuthenticationAuthority.IndexOf("login.microsoftonline.com") == -1) 
+                ? $"{appSettings.AuthenticationAuthority}/{appSettings.TenantId}"
+                : $"{appSettings.AuthenticationAuthority}/{appSettings.TenantId}/v2.0";
+            var audience = (appSettings.AuthenticationAuthority.IndexOf("sts.windows.net") == -1) 
+                ? appSettings.ClientId 
+                : $"api://{appSettings.ClientId}";
+            _validAudiences = new List<string>() { audience };
             _tokenValidator = new JwtSecurityTokenHandler();
             _tokenValidationParameters = new TokenValidationParameters
             {
-                ValidAudience = audience
+                ValidAudiences = _validAudiences
             };
             _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
                 $"{authority}/.well-known/openid-configuration",
@@ -60,6 +72,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
             if (!TryGetTokenFromHeaders(context, out var token))
             {
                 // Unable to get token from headers
+                _logger.LogError("401 Unauthorized: Unable to get token from the headers");
                 context.SetHttpResponseStatusCode(HttpStatusCode.Unauthorized);
                 return;
             }
@@ -67,6 +80,7 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
             if (!_tokenValidator.CanReadToken(token))
             {
                 // Token is malformed
+                _logger.LogError("401 Unauthorized: JWT Token is malformed");
                 context.SetHttpResponseStatusCode(HttpStatusCode.Unauthorized);
                 return;
             }
@@ -89,9 +103,12 @@ namespace Microsoft.Teams.EmbeddedChat.Middleware
 
                 await next(context);
             }
-            catch (SecurityTokenException)
+            catch (SecurityTokenException e)
             {
                 // Token is not valid (expired etc.)
+                var stringBuilder = new StringBuilder();
+                stringBuilder.AppendJoin(',', _validAudiences.ToArray());
+                _logger.LogError($"401 Unauthorized: Token is not valid. Error: {e.Message}. Accepted Audiences: {stringBuilder.ToString()}");
                 context.SetHttpResponseStatusCode(HttpStatusCode.Unauthorized);
                 return;
             }

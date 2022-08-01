@@ -17,7 +17,7 @@ export class AuthUtil {
             // launch popup
             waiting.show();
             let popupRef = window.open(
-              `https://${config.hostDomain}/auth.html?mode=interactive&resource=${encodeURIComponent(resource)}&client_id=${config.clientId}&host_uri=${config.hostDomain}&tenant=${config.tenant}`,
+              `https://${config.publicHost}/auth.html?mode=interactive&resource=${encodeURIComponent(resource)}&client_id=${config.clientId}&host_uri=${config.publicHost}&tenant=${config.tenant}`,
               "Teams Embed",
               "width=700,height=700,toolbar=yes",
             );
@@ -49,7 +49,7 @@ export class AuthUtil {
       const loginframe = document.createElement("iframe");
       loginframe.setAttribute(
         "src",
-        `https://${config.hostDomain}/auth.html?resource=${encodeURIComponent(resource)}&client_id=${config.clientId}&host_uri=${config.hostDomain}&tenant=${config.tenant}`,
+        `https://${config.publicHost}/auth.html?resource=${encodeURIComponent(resource)}&client_id=${config.clientId}&host_uri=${config.publicHost}&tenant=${config.tenant}`,
       );
       loginframe.style.display = "none";
       element.append(loginframe);

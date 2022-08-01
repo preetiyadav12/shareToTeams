@@ -1,0 +1,211 @@
+name: Build and Deploy Embedded Chat Function App to Azure
+
+on:
+  push:
+    branches:
+      - main
+      - dannyg/**
+    paths:
+      - ".github/workflows/app-deploy.yml"
+      - "terraform/**"
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: ./publish
+  CONFIGURATION: Release
+  DOTNET_CORE_VERSION: 6.0.x
+  WORKING_DIRECTORY: ./src/api/Microsoft.Teams.EmbeddedChat
+jobs:
+  load_environments:
+    name: Load Environment matrix
+    runs-on: ubuntu-latest
+    outputs:
+      environment_matrix: ${{ steps.yaml2json.outputs.data }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: YAML to JSON Converter
+        id: yaml2json
+        uses: fabasoad/yaml-json-xml-converter-action@v1.0.11
+        with:
+          path: deploy/environments.yml
+          from: yaml
+          to: json
+
+  build_and_publish_app:
+    name: Build & Publish Function application
+    runs-on: ubuntu-latest
+    needs: ["load_environments"]
+    strategy:
+      matrix: ${{ fromJson(needs.load_environments.outputs.environment_matrix) }}
+    environment:
+      name: ${{ matrix.environmentName }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+
+    - name: Setup .NET Core (for inproc extensions)
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION_INPROC }}
+        include-prerelease: True
+
+    - name: Restore
+      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
+
+    - name: Build
+      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+
+    - name: Publish
+      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+
+    - name: Archive Published artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: func-app-package
+        path: ${{ matrix.repoHomePath }}/publish # or path/to/artifact
+
+  create_infrastructure:
+    name: Create Infrastructure
+    runs-on: ubuntu-latest
+    needs: ["load_environments", "build_and_publish_app"]
+    strategy:
+      matrix: ${{ fromJson(needs.load_environments.outputs.environment_matrix) }}
+    environment:
+      name: ${{ matrix.environmentName }}
+    env:
+      ARM_CLIENT_ID: ${{ secrets[matrix.secretArmClientId] }}
+      ARM_CLIENT_SECRET: ${{ secrets[matrix.secretArmClientSecret] }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets[matrix.secretSubscriptionId] }}
+      ARM_TENANT_ID: ${{ secrets[matrix.secretTenantId] }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download App Published artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: func-app-package
+        path: ${{ matrix.repoHomePath }}/publish
+
+    - name: Deploy Infrastructure
+      id: terraform
+      uses: ./.github/actions/run-terraform-deploy
+      with:
+        terraformWorkspace: ${{ matrix.environmentName }}
+        terraformPath: terraform
+        terraformArgs: >
+          -var 'location=${{ matrix.location }}'
+          -var 'org_name=${{ matrix.orgName }}'
+          -var 'project_name=${{ matrix.projectName }}'
+          -var 'service_name=${{ matrix.serviceName }}'
+          -var 'function_publish_path=${{ matrix.repoHomePath }}/publish'
+          -var 'subscription_id=${{ secrets[matrix.secretSubscriptionId] }}'
+          -var 'client_id=${{ secrets[matrix.secretAppClientId] }}'
+          -var 'client_secret=${{ secrets[matrix.secretAppClientSecret] }}'
+          -var 'tenant_id=${{ secrets[matrix.secretTenantId] }}'
+          -var 'service_principal_object_id=${{ secrets[matrix.secretArmClientId] }}'
+          -var 'sas_start_date=${{ secrets[matrix.secretSasStartDate] }}'
+          -var 'sas_end_date=${{ secrets[matrix.secretSasEndDate] }}'
+
+  get_terraform_outputs_job:
+    name: Extract Terraform Outputs
+    runs-on: ubuntu-latest
+    needs: ["load_environments", "create_infrastructure"]
+    strategy:
+      matrix: ${{ fromJson(needs.load_environments.outputs.environment_matrix) }}
+    environment:
+      name: ${{ matrix.environmentName }}
+    env:
+      ARM_CLIENT_ID: ${{ secrets[matrix.secretArmClientId] }}
+      ARM_CLIENT_SECRET: ${{ secrets[matrix.secretArmClientSecret] }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets[matrix.secretSubscriptionId] }}
+      ARM_TENANT_ID: ${{ secrets[matrix.secretTenantId] }}
+    outputs:
+      CDN_ENDPOINT_FQN: ${{ steps.getStorageConnString.outputs.cdn_endpoint }}
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_wrapper: false # required for being able to use Terraform Output variables down in the Actions
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ matrix.repoHomePath }}/terraform
+      run: terraform init
+      
+    - name: "Terraform Select Workspace"
+      shell: bash
+      working-directory: ${{ matrix.repoHomePath }}/terraform
+      run: terraform workspace select ${{ matrix.environmentName }}
+
+    - name: "Assign terraform outputs to Environment Variables"
+      id: getStorageConnString
+      shell: bash
+      working-directory: ${{ matrix.repoHomePath }}/terraform
+      run: |
+        echo "::set-output name=cdn_endpoint::$(terraform output cdn_endpoint)"
+
+
+  ui_build_deploy:
+    name: Build & Deploy Embedded Chat Component
+    runs-on: ubuntu-latest
+    needs: ["load_environments", "create_infrastructure", "get_terraform_outputs_job"]
+    strategy:
+      matrix: ${{ fromJson(needs.load_environments.outputs.environment_matrix) }}
+    environment:
+      name: ${{ matrix.environmentName }}
+    env:
+      ARM_CLIENT_ID: ${{ secrets[matrix.secretArmClientId] }}
+      ARM_CLIENT_SECRET: ${{ secrets[matrix.secretArmClientSecret] }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets[matrix.secretSubscriptionId] }}
+      ARM_TENANT_ID: ${{ secrets[matrix.secretTenantId] }}
+      AZURE_STORAGE_ACCOUNTNAME: ${{ matrix.orgName }}${{ matrix.projectName }}${{ matrix.environmentName }}${{ matrix.storageAccount }}
+      CONTAINER: ${{ matrix.containerName }}
+      FILES_TO_UPLOAD: src/embedchat/dist
+      CDN_ENDPOINT_FQN: ${{ needs.get_terraform_outputs_job.outputs.CDN_ENDPOINT_FQN }}
+    steps:
+      - name: Node Set up Environment
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: yarn install
+        working-directory: src/embedchat/
+        run: yarn install
+
+      - name: yarn build
+        working-directory: src/embedchat/
+        run: yarn build:dev
+        # run: yarn build:${{ matrix.environmentName }}
+
+      # - name: Test the build
+      #   working-directory: src/embedchat/
+      #   run: |
+      #     yarn test
+
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
+
+      - name: "Upload Embedded Chat artifacts"
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload-batch --account-name ${{ env.AZURE_STORAGE_ACCOUNTNAME }} --auth-mode key -d '${{ matrix.containerName }}' -s '${{ env.FILES_TO_UPLOAD }}' --pattern *.html --content-type text/html
+            az storage blob upload-batch --account-name ${{ env.AZURE_STORAGE_ACCOUNTNAME }} --auth-mode key -d '${{ matrix.containerName }}' -s '${{ env.FILES_TO_UPLOAD }}' --pattern *.js --content-type text/javascript
+            az storage blob upload-batch --account-name ${{ env.AZURE_STORAGE_ACCOUNTNAME }} --auth-mode key -d '${{ matrix.containerName }}' -s '${{ env.FILES_TO_UPLOAD }}' --pattern *.css --content-type text/css
+            az storage blob upload --account-name ${{ env.AZURE_STORAGE_ACCOUNTNAME }} --auth-mode key -f '${{ env.FILES_TO_UPLOAD }}/auth.html' -c 'auth${{ matrix.containerName }}' --content-type text/html --overwrite true
+
+

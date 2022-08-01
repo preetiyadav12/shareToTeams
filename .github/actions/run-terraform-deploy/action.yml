@@ -1,0 +1,52 @@
+name: Run Terraform Deployment
+description: Runs terraform deployment for the given microservice
+inputs:
+  terraformWorkspace:
+    description: Name of the terraform workspace to use (tied to the environment)
+    required: true
+  terraformPath:
+    description: Path to the terraform files to deploy
+    required: true
+  terraformArgs:
+    description: Arguments to pass to the terraform plan
+    required: false
+    default: ""
+outputs:
+  connString: 
+    description: The Azure Storage Connection String
+    value: ${{ steps.getConnString.outputs.connString }}
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_wrapper: false # required for being able to use Terraform Output variables down in the Actions
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform init
+      
+    - name: "Terraform Select Workspace"
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform workspace select ${{ inputs.terraformWorkspace }} || terraform workspace new ${{ inputs.terraformWorkspace }}
+      # run: terraform workspace select ${{ inputs.terraformWorkspace }}
+
+    - name: Terraform Validate
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform validate
+
+    - name: Terraform Plan
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform plan -out=plan ${{ inputs.terraformArgs }}
+      
+    - name: Terraform Apply
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform apply --auto-approve plan
+
+

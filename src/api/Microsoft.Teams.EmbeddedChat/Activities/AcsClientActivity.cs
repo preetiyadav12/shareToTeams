@@ -31,7 +31,9 @@ public class AcsClientActivity
         try
         {
             // create ACS Communication Identity Client Service
-            var comClient = new CommServices(new Uri(appConfiguration.AcsEndpoint),
+            //var comClient = new CommServices(new Uri(appConfiguration.AcsEndpoint),
+            //    new[] { CommunicationTokenScope.Chat, CommunicationTokenScope.VoIP });
+            var comClient = new CommServices(appConfiguration.AcsConnectionString,
                 new[] { CommunicationTokenScope.Chat, CommunicationTokenScope.VoIP });
 
             // Create user Id and ACS token

@@ -40,7 +40,7 @@ export class EmbeddedChat {
     const linkElement = document.createElement("link");
     linkElement.setAttribute("rel", "stylesheet");
     linkElement.setAttribute("type", "text/css");
-    linkElement.setAttribute("href", `https://${config.hostDomain}/embedChat.css`);
+    linkElement.setAttribute("href", `https://${config.privateHost}/embedChat.css`);
     document.head.append(linkElement);
   }
 

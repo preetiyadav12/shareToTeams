@@ -1,0 +1,44 @@
+name: Get Terraform Output Variables
+description: Set Environment Variables from Terraform Output Variables
+inputs:
+  terraformWorkspace:
+    description: Name of the terraform workspace to use (tied to the environment)
+    required: true
+  terraformPath:
+    description: Path to the terraform files to deploy
+    required: true
+  terraformArgs:
+    description: Arguments to pass to the terraform plan
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_wrapper: false # required for being able to use Terraform Output variables down in the Actions
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform init
+      
+    - name: "Terraform Select Workspace"
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: terraform workspace select ${{ inputs.terraformWorkspace }}
+
+    - name: "Assign terraform output to Environment Variable"
+      id: getStorageConnString
+      shell: bash
+      working-directory: ${{ inputs.terraformPath }}
+      run: |
+        AZURE_STORAGE_CONNECTION=$(terraform output storage_account_connection_string)
+        echo $AZURE_STORAGE_CONNECTION
+
+    - name: "Upload Embedded Chat UI components to Azure Storage blob container"
+      shell: bash
+      working-directory: ${{ inputs.sourcePath }}
+      run: |
+        yarn upload
