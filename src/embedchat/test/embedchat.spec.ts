@@ -1,4 +1,8 @@
 /**
+ * @jest-environment jsdom
+ */
+
+/**
  ** Test MSTeamsExt package
  */
 import { EmbeddedChat } from "../src/embedChat";
@@ -17,7 +21,9 @@ describe("Unit Tests", () => {
         clientId: "",
         tenant: "",
         acsEndpoint: "",
+        guestAccountName: "",
       });
+
 
       expect(instance).toBeDefined();
     });

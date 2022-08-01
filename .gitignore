@@ -134,6 +134,8 @@ package-lock.json
 # .tfstate files
 *.tfstate
 *.tfstate.*
+*.terraform.lock.hcl
+plan
 
 # Crash log files
 crash.log
@@ -188,6 +190,8 @@ project.lock.json
 .DS_Store
 *.pyc
 nupkg/
+**/Properties/*
+**.local.json
 
 # Visual Studio Code
 .vscode
@@ -223,7 +227,6 @@ msbuild.wrn
 ## Users settings
 **/appsettings.[Dd]evelopment.json
 **/appsettings.[Tt]est.json
-**/appsettings.[Pp]roduction.json
 **/appsettings.json
 **/launchSettings.json
 

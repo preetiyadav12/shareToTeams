@@ -8,10 +8,14 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
+if (!process.env.CDN_ENDPOINT_FQN) {
+  throw Error("Azure CDN Endpoint Environment Variable is not found");
+}
+
 const PACKAGE_NAME = "MSTeamsExt";
 const output_dir = "dist";
-const embedChatUrl = `https://${process.env.AZURE_STORAGE_ACCOUNTNAME}.blob.core.windows.net/${process.env.CONTAINER}`;
 const port = 4000;
+const authPath = `https://${process.env.CDN_ENDPOINT_FQN?.replace(/["]/g, '')}`;
 
 module.exports = {
   mode: "production",
@@ -71,7 +75,7 @@ module.exports = {
       template: path.resolve(__dirname, "src", "auth.html"),
       filename: "auth.html",
       chunks: ["auth"],
-      publicPath: `${embedChatUrl}`,
+      publicPath: authPath,
       minify: false,
       inject: "body",
       cache: true,

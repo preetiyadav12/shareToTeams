@@ -212,7 +212,7 @@ public static class EntityMappingActivity
     {
 
         // create ACS Communication Identity Client Service
-        var comClient = new CommServices(new Uri(appConfiguration.AcsEndpoint),
+        var comClient = new CommServices(appConfiguration.AcsConnectionString,
         new[] { CommunicationTokenScope.Chat, CommunicationTokenScope.VoIP });
 
 

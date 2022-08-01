@@ -3,26 +3,32 @@ require("dotenv").config();
 
 async function main() {
   console.log("Uploading bundled package to Azure Storage...");
-
-  const azureStorageAccountName = process.env.AZURE_STORAGE_ACCOUNTNAME;
-  const azureStorageAccountKey = process.env.AZURE_STORAGE_ACCOUNTKEY;
   const containerName = process.env.CONTAINER;
+  let azureStorageConnString = process.env.AZURE_STORAGE_CONNECTION;
 
-  if (!azureStorageAccountName) {
-    throw Error("Azure Storage Account Name string not found");
+  if (!azureStorageConnString) {
+    const azureStorageAccountName = process.env.AZURE_STORAGE_ACCOUNTNAME;
+    const azureStorageAccountKey = process.env.AZURE_STORAGE_ACCOUNTKEY;
+  
+    if (!azureStorageAccountName) {
+      throw Error("Azure Storage Account Name string not found");
+    }
+    if (!azureStorageAccountKey) {
+      throw Error("Azure Storage Account Key string not found");
+    }
+  
+    // Construct Azure Storage Connection string
+    azureStorageConnString = `DefaultEndpointsProtocol=https;AccountName=${azureStorageAccountName};AccountKey=${azureStorageAccountKey};EndpointSuffix=core.windows.net`;
+  
   }
-  if (!azureStorageAccountKey) {
-    throw Error("Azure Storage Account Key string not found");
-  }
-
-  // Construct Azure Storage Connection string
-  const azureStorageConnString = `DefaultEndpointsProtocol=https;AccountName=${azureStorageAccountName};AccountKey=${azureStorageAccountKey};EndpointSuffix=core.windows.net`;
 
   // Get the list of files to upload
   const filesToUpload = process.env.FILES_TO_UPLOAD.split(",");
   if (!filesToUpload || filesToUpload.length === 0) {
     throw Error("No files found to upload");
   }
+
+  console.log(`Connection String: ${azureStorageConnString}`)
 
   // Create the BlobServiceClient object which will be used to create a container client
   const blobServiceClient = BlobServiceClient.fromConnectionString(azureStorageConnString);
@@ -70,7 +76,7 @@ async function main() {
 
     await blockBlobClient.uploadFile(fileName, options);
     console.log(
-      `${fileName} was successfully uploaded to: https://${azureStorageAccountName}.blob.core.windows.net/${containerName}/${blobName}`,
+      `${fileName} was successfully uploaded to Azure Storage at ${containerName}/${blobName}`,
     );
   });
 }
