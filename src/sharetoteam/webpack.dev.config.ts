@@ -9,7 +9,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 if (!process.env.CDN_ENDPOINT_FQN) {
-  throw Error("Azure CDN Endpoint Environment Variable is not found");
+  throw Error("Azure CDN Endpoint Environment Variable is not found ");
 }
 
 const PACKAGE_NAME = "MSTeamsExt";

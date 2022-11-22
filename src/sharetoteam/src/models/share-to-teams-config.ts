@@ -1,3 +1,12 @@
+export enum Scope {
+  INDIVIDUAL = 'INDIVIDUAL',
+  GROUP = 'GROUP',
+  CHANNEL = 'CHANNEL'
+}
+
 export type ShareToTeamsConfig = {
-  entityId?: string;
+  threadId?: string; 
+  comments ?: boolean;
+  preview?: boolean;
+  scope?: Scope; 
 };

@@ -61,7 +61,6 @@ export class Auth {
 
     const accounts = msalInstance.getAllAccounts();
 
-    // if the user is signed in, acquire the token
     if (accounts.length != 0) {
       try {
         const resp = await msalInstance.acquireTokenSilent({
@@ -69,7 +68,6 @@ export class Auth {
           account: accounts[0],
         });
         if (resp.accessToken) {
-          // return the token based on mode
           if (window.location.href.indexOf("?mode=interactive") === -1) {
             console.log("Returning token from silent auth");
             parent.postMessage(resp, "*");
@@ -78,9 +76,7 @@ export class Auth {
             window.opener.postMessage(resp, "*");
           }
         } else {
-          // return error based on how this was launched
           if (window.location.href.indexOf("?mode=interactive") === -1) {
-            // this should never happen??? Maybe when tokens stale
             console.log("Silent auth failed");
             parent.postMessage(null, "*");
           } else {
@@ -90,9 +86,7 @@ export class Auth {
         }
       }
       catch (error) {
-        // return error based on how this was launched
         if (window.location.href.indexOf("?mode=interactive") === -1) {
-          // this should never happen??? Maybe when tokens stale
           console.log("Silent auth failed");
           parent.postMessage(null, "*");
         } else {
@@ -101,7 +95,6 @@ export class Auth {
         }
       }
     } else {
-      // No user signed in
       if (window.location.href.indexOf("?mode=interactive") === -1) {
         console.log("This was an attempt at silent auth that failed...return null");
         parent.postMessage(null, "*");
@@ -110,7 +103,6 @@ export class Auth {
         await msalInstance.acquireTokenRedirect({
           scopes: [this.resource],
           redirectStartPage: window.location.href,
-          //prompt: "consent" //This is for testing re-consent scenarios
         });
       }
     }

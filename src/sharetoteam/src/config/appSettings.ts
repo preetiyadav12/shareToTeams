@@ -1,7 +1,5 @@
 export interface AppSettings {
-  privateHost?: string;
-  publicHost?: string;
-  apiBaseUrl?: string;
+  hostUrl?: string;
   clientId?: string;
   tenant?: string;
 }

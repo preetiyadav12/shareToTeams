@@ -87,6 +87,13 @@ module.exports = {
         },
       ],
     }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: "src/shareToTeams.css",
+        },
+      ],
+    }),
   ],
   devtool: "inline-source-map",
   devServer: {

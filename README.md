@@ -1,10 +1,10 @@
 # Problem Statement
 
-Organizations want to embed Microsoft Teams chat into 3rd party applications at the entity level (ex: purchase order, resource request, help desk ticket)
+Organizations want to share messages into teams
 
 ## Key Requirements
 
-The goal is to investigate and build a sample app that features embedded chat control that syncs with Teams group chats.
+The goal is to investigate and build a sample app that features share to teams control that syncs with Teams group chats.
 Key requirements are:
 
 • Ability to initiate a group chat with team members
@@ -19,4 +19,4 @@ To follow the steps to deploy your solution to Azure, please follow this [guidan
 
 ## Development Locally
 
-To be able to install this solution on a local machine and use development tools to test and make any changes in it, please follow this [guidance](src/embedchat/README.md)
+To be able to install this solution on a local machine and use development tools to test and make any changes in it, please follow this [guidance](src/sharetoteams/README.md)

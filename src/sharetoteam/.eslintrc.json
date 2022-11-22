@@ -13,8 +13,8 @@
   ],
   "rules": {
     "no-loops/no-loops": 0,
-    "@typescript-eslint/no-explicit-any": ["off"],
-    "@typescript-eslint/no-non-null-assertion": ["off"]
+    "@typescript-eslint/no-non-null-assertion": ["off"],
+    "@typescript-eslint/no-explicit-any": ["off"]
   },
   "settings": {
     "react": {

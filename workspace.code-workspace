@@ -5,30 +5,11 @@
       "path": "docs"
     },
     {
-      "name": "Embedded Chat",
-      "path": "src/embedchat"
-    },
-    {
-      "name": "API",
-      "path": "src/api/Microsoft.Teams.EmbeddedChat"
-    },
-    {
-      "name": "Samples/NodeJs",
-      "path": "samples/nodejs"
-    },
-    {
-      "name": "Samples/React",
-      "path": "samples/react"
+      "name": "Share To Teams",
+      "path": "src/shareToTeams"
     },
     {
       "path": "deploy"
-    },
-    {
-      "name": "Spikes/EntityMapping",
-      "path": "spikes/EntityMapping"
-    },
-    {
-      "path": "spikes/UI"
     },
     {
       "path": "terraform"
@@ -82,9 +63,9 @@
     "liveServer.settings.CustomBrowser": "chrome",
     "liveServer.settings.https": {
       "enable": true,
-      "cert": "/Users/dannyg/https/localhost.pem",
-      "key": "/Users/dannyg/https/localhost.key",
-      "passphrase": "d20250318g"
+      "cert": "",
+      "key": "",
+      "passphrase": ""
     }
   },
   "launch": {

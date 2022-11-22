@@ -11,10 +11,10 @@ async function main() {
     const azureStorageAccountKey = process.env.AZURE_STORAGE_ACCOUNTKEY;
   
     if (!azureStorageAccountName) {
-      throw Error("Azure Storage Account Name string not found");
+      throw Error("Azure Storage Account Name string not found ");
     }
     if (!azureStorageAccountKey) {
-      throw Error("Azure Storage Account Key string not found");
+      throw Error("Azure Storage Account Key string not found ");
     }
   
     // Construct Azure Storage Connection string
